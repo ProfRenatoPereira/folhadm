@@ -188,6 +188,73 @@ def calcular_e_salvar():
     conexao.close()
     return jsonify({'status': 'sucesso'})
 
+@app.route('/api/decimo_individual/<int:id_func>', methods=['GET'])
+def calcular_decimo_individual(id_func):
+    conexao = sqlite3.connect(DB_FILE)
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+    cursor.execute('SELECT * FROM funcionarios WHERE id = ?', (id_func,))
+    f = cursor.fetchone()
+    conexao.close()
+
+    if not f:
+        return jsonify({'status': 'erro', 'message': 'Funcionário não encontrado!'}), 404
+
+    f_dict = dict(f)
+    salario_base = f_dict.get('salario', 0)
+    media_he = f_dict.get('total_he_ganho', 0) # Média de HE acumulada na folha
+    insalubridade = f_dict.get('insalubridade', 0)
+    adicional_noturno = f_dict.get('adicional_noturno', 0)
+
+    # Base de cálculo do 13º com acréscimo legal de médias e adicionais
+    base_calculo_13 = salario_base + media_he + insalubridade + adicional_noturno
+
+    # Cálculo dos meses proporcionais trabalhados no ano corrente (2026)
+    meses_trabalhados = 12
+    data_adm_str = f_dict.get('data_admissao', '')
+    
+    if data_adm_str:
+        try:
+            data_adm = datetime.strptime(data_adm_str, "%Y-%m-%d")
+            # Se foi admitido no ano corrente (2026), calcula a proporcionalidade
+            if data_adm.year == 2026:
+                # Se trabalhou 15 dias ou mais no mês de admissão, o mês conta integralmente
+                meses_trabalhados = 12 - data_adm.month + 1
+                if data_adm.day > 15:
+                    meses_trabalhados -= 1
+                if meses_trabalhados < 0: meses_trabalhados = 0
+        except Exception: pass
+
+    # Valor Bruto Proporcional do 13º Salário
+    decimo_bruto = (base_calculo_13 / 12.0) * meses_trabalhados
+    # Cálculo das retenções de INSS específicas sobre a gratificação natalina (13º)
+    inss_13 = 0
+    if decimo_bruto <= 1412: 
+        inss_13 = decimo_bruto * 0.075
+    elif decimo_bruto <= 2666.68: 
+        inss_13 = (decimo_bruto * 0.09) - 21.18
+    elif decimo_bruto <= 4000.03: 
+        inss_13 = (decimo_bruto * 0.12) - 101.18
+    elif decimo_bruto <= 7786.02: 
+        inss_13 = (decimo_bruto * 0.14) - 181.18
+    else: 
+        inss_13 = 908.86
+
+    decimo_liquido = decimo_bruto - inss_13
+
+    # Retorna o cálculo completo para o front-end injetar na interface
+    return jsonify({
+        'status': 'sucesso',
+        'nome': f_dict.get('nome'),
+        'cargo': f_dict.get('cargo'),
+        'meses_proporcionais': meses_trabalhados,
+        'base_calculo': base_calculo_13,
+        'bruto': decimo_bruto,
+        'inss': inss_13,
+        'liquido': decimo_liquido
+    })
+
+
 if __name__ == '__main__':
     # Configurado para rodar localmente na porta 5000
     app.run(debug=True, host='0.0.0.0', port=5000)
