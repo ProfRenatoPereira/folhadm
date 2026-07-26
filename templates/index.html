@@ -27,7 +27,7 @@
 
         /* --- SISTEMA DE ACESSIBILIDADE VISUAL (Toda a página) --- */
         html { font-size: 16px; transition: font-size 0.15s ease; }
-        body.dark-mode { background-color: #121212 !important; color: #e2e8f0 !important; }
+        body.dark-mode { background-color: #121212 !important; color: #e2e2e2 !important; }
         body.dark-mode .card, body.dark-mode .chart-box { background: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
         body.dark-mode .chart-box h4 { color: #38bdf8 !important; border-bottom-color: #334155 !important; }
         body.dark-mode input, body.dark-mode select { background: #0f172a !important; color: #fff !important; border-color: #334155 !important; }
@@ -196,7 +196,7 @@
                     <th>Cargo / Departamento</th>
                     <th>Jornada / Turno</th>
                     <th>Líquido Final</th>
-                    <th style="width: 260px;">Ações Legais e Rescisórias</th>
+                    <th style="width: 360px;">Ações Legais e Rescisórias</th>
                 </tr>
             </thead>
             <tbody id="tabela_corpo"></tbody>
@@ -204,7 +204,6 @@
     </div>
 </div>
 
-<!-- Template Oculto para Área de Impressão de Balanço Dinâmico -->
 <div id="print-area" style="display: none;"></div>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
