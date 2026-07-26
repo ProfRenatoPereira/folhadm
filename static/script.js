@@ -405,3 +405,12 @@ document.addEventListener('mouseover', (evento) => {
         fala.lang = 'pt-BR'; fala.rate = 1.25; window.speechSynthesis.speak(fala);
     }
 });
+
+function calcularDecimoTeceiroIndividual(id) {
+    fetch(`/api/decimo_individual/${id}`)
+        .then(res => res.json())
+        .then(dados => {
+            if(dados.status === 'erro') { alert(dados.message); return; }
+            alert(`13º Salário de ${dados.nome}:\nMeses Proporcionais: ${dados.meses_proporcionais}\nValor Bruto: ${formatarMoeda(dados.bruto)}\nINSS Retido: ${formatarMoeda(dados.inss)}\nValor Líquido: ${formatarMoeda(dados.liquido)}`);
+        }).catch(err => console.error("Erro na rota do 13º:", err));
+}
