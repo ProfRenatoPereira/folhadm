@@ -1,6 +1,4 @@
-Site de Aprendizagem. Simulador de folha de pagamento.
-
-Módulo funcional hospedado em: render.com. Tecnologias e plataformas: github, render e supabase.
+Site de Aprendizagem. Simulador de folha de pagamento. Módulo funcional hospedado em: render.com. Tecnologias e plataformas: github, render e supabase.
 
 # © Copyright Física Renato Pereira ®ψΣ.
 
