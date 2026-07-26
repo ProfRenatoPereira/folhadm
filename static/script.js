@@ -8,7 +8,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await carregarCargosBanco();
     await carregarDadosBanco();
     
-    // Vinculação de escutadores de eventos operacionais
+    // Vinculação cirúrgica dos botões operacionais da tela
     document.getElementById('btn_add_cargo')?.addEventListener('click', adicionarCargoNovo);
     document.getElementById('btn_contratar')?.addEventListener('click', adicionarFuncionario);
     document.getElementById('btn_salvar')?.addEventListener('click', salvarAlteracoesFuncionario);
@@ -17,14 +17,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn_13')?.addEventListener('click', abrirDecimoTerceiroGeral);
     document.getElementById('btn_print_list')?.addEventListener('click', () => window.print());
     
-    // Atualização em tempo real nas mudanças de entrada
+    // Atualização em tempo real nas mudanças fiscais e temporais
     document.getElementById('mes_referencia')?.addEventListener('change', actualizarDashboard);
     document.getElementById('ano_referencia')?.addEventListener('change', actualizarDashboard);
     document.getElementById('receita_empresa')?.addEventListener('change', actualizarDashboard);
     document.getElementById('limite_func')?.addEventListener('change', actualizarDashboard);
     document.getElementById('btn_tema')?.addEventListener('click', alternarTema);
 
-    // Validação do estado do tema salvo na memória local
+    // Conservação do tema de acessibilidade preferido do usuário
     if (localStorage.getItem('tema') === 'escuro') {
         document.body.classList.add('dark-mode');
         const botao = document.getElementById('btn_tema');
@@ -41,7 +41,7 @@ async function carregarCargosBanco() {
         if (selectCargo) {
             selectCargo.innerHTML = '';
             cargos.forEach(c => {
-                const cargoNome = Array.isArray(c) ? c[0] : c;
+                const cargoNome = Array.isArray(c) ? c : c;
                 const opt = document.createElement('option');
                 opt.value = cargoNome; opt.innerText = cargoNome;
                 selectCargo.appendChild(opt);
@@ -134,7 +134,7 @@ async function adicionarFuncionario() {
             await carregarDadosBanco();
         } else {
             const erro = await resposta.json();
-            alert(erro.message || "Erro no processamento da folha.");
+            alert(erro.message || "Erro no cálculo.");
         }
     } catch(e) { console.error("Erro ao enviar funcionário para API"); }
 }
@@ -252,12 +252,13 @@ function renderizarTabela() {
         <td>${f.cargo}<br><small style="color:#64748b">Dep: ${deptoRotulo}</small></td>
         <td><small>Jornada: ${jTexto}</small><br><strong>${turnoRotulo}</strong></td>
         <td style="color:#16a34a"><strong>${formatarMoeda(f.liquido)}</strong></td>
-        <td class="actions-cell">
-            <a onclick="abrirContracheque(${f.id})" class="btn-link">📄 Mensal</a>
-            <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a">🌴 Férias</a>
-            <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7">🎄 13º</a>
-            <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 5px; margin-right:2px; font-size:0.65rem;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')">⚠️ Dispensa</button>
-            <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 5px; font-size:0.65rem;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')">🚪 Pedido</button>
+        <td class="actions-cell" style="display: flex; gap: 4px; align-items: center; justify-content: flex-start; wrap: nowrap;">
+            <a onclick="abrirContracheque(${f.id})" class="btn-link" title="Holerite Mensal">📄 Mês</a>
+            <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a" title="Recibo de Férias">🌴 Férias</a>
+            <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7" title="13º Individual">🎄 13º</a>
+            <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
+            <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
+            <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
         </td>`;
         corpo.appendChild(tr);
         document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
@@ -281,7 +282,6 @@ function dispararRescisaoImediata(id, tipo) {
     const msg = tipo === 'demissao_sem_justa' ? 'Calcular DISPENSA SEM JUSTA CAUSA de ' : 'Calcular PEDIDO DE DEMISSÃO de ';
     if (confirm(msg + f.nome + "?")) { emitirRescisaoExecutiva(f, tipo); }
 }
-
 function abrirContracheque(id) {
     const f = funcionarios.find(emp => emp.id === id);
     if (!f) return;
@@ -291,12 +291,10 @@ function abrirContracheque(id) {
     const baseFgts = f.salario + (f.total_he_ganho || 0) + (f.adicional_noturno || 0) + (f.insalubridade || 0);
     const fgtsMes = baseFgts * 0.08;
     const obsEmpresa = document.getElementById('observacoes')?.value.trim() || f.observacoes || "Nenhuma observação informada.";
-    
-    const janela = window.open('', '_blank', 'width=800,height=900');
-    if (!janela) return;
+    const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
 
     let html = "<html><head><title>Holerite Oficial</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    html += "<div class='header-holerite' style='display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
+    html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
     html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p><p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + "</p></div>";
     html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Salário Base</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
@@ -328,7 +326,7 @@ function abrirFerias(id) {
     const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
     
     let html = "<html><head><title>Recibo de Férias</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    html += "<div class='header-holerite' style='display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
+    html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE AVISO E GOZO DE FÉRIAS</h2><hr>";
     html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p></div>";
     html += "<h4 class='section-title proventos-title'>VERBAS REFEITAS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Valor Base das Férias (Salário + Média H.E.)</td><td class='text-right'>" + formatarMoeda(base) + "</td></tr><tr><td>(+) Terço Constitucional de Férias (1/3)</td><td class='text-right'>" + formatarMoeda(terco) + "</td></tr><tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(totalBruto) + "</td></tr></table>";
@@ -345,7 +343,7 @@ function calcularDecimoTerceiroIndividual(id) {
             if (dados.status === 'erro') { alert(dados.message); return; }
             const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
             let html = "<html><head><title>13º Individual</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-            html += "<div class='header-holerite' style='display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
+            html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
             html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>DEMONSTRATIVO DE 13º SALÁRIO INDIVIDUAL</h2><hr>";
             html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + dados.nome + " | <strong>Meses Proporcionais:</strong> " + dados.meses_proporcionais + "/12</p></div>";
             html += "<h4 class='section-title proventos-title'>CRÉDITOS</h4><table class='table-holerite'><tr><td>(+) Gratificação Natalina Bruta (Com Média H.E.)</td><td class='text-right'>" + formatarMoeda(dados.bruto) + "</td></tr><tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(dados.bruto) + "</td></tr></table>";
@@ -362,7 +360,7 @@ async function emitirRescisaoExecutiva(f, tipo) {
     } catch(e) {}
     const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
     let htmlRescisao = "<html><head><title>Rescisão</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    htmlRescisao += "<div class='header-holerite' style='display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
+    htmlRescisao += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     htmlRescisao += "<h2 style='text-align:center; font-size:1.2rem;'>TERMO DE QUITAÇÃO DE RESCISÃO CONTRATUAL</h2><hr>";
     htmlRescisao += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + "</p><p><strong>Motivo:</strong> " + (tipo === 'pedido_demissao' ? 'Pedido de Demissão' : 'Dispensa sem Justa Causa') + "</p></div>";
     htmlRescisao += "<h4 class='section-title proventos-title'>CRÉDITOS RESCISÓRIOS</h4><table class='table-holerite'><tr><td>(+) Saldo Salarial, Férias e 13º Proporcionais</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr><tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
@@ -377,7 +375,7 @@ function abrirDecimoTerceiroGeral() {
     let totalDescontos = totalProventos * 0.09;
     const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
     let html13 = "<html><head><title>Folha de 13º</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    html13 += "<div class='header-holerite' style='display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 15px;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
+    html13 += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html13 += "<h2 style='text-align:center; font-size:1.2rem;'>FOLHA DE DÉCIMO TERCEIRO INTEGRAL GERAL</h2><hr>";
     html13 += "<div class='liquido-box'><span>TOTAL LÍQUIDO A PAGAR GLOBAL:</span><span class='liquido-value'>" + formatarMoeda(totalProventos - totalDescontos) + "</span></div></div></body></html>";
     janela.document.write(html13); janela.document.close();
