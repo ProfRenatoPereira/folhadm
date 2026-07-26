@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, jsonify
+from datetime import datetime
 import sqlite3
 import os
 
 app = Flask(__name__)
-DB_FILE = 'folha_v3.db'  # Força a criação da base de dados expandida limpa
+DB_FILE = 'folha_v4.db'  # Banco atualizado para suportar os novos campos
 
 def iniciar_banco():
     conexao = sqlite3.connect(DB_FILE)
@@ -17,7 +18,9 @@ def iniciar_banco():
             reflexo_13_ferias REAL, salario_familia REAL, inss REAL, irrf REAL, vt REAL,
             adiantamento_valor REAL, total_descontos REAL, liquido REAL,
             banco_horas REAL, turno TEXT, hora_entrada TEXT, adicional_noturno REAL, regime_he TEXT,
-            departamento TEXT
+            departamento TEXT,
+            plano_saude REAL DEFAULT 0, plano_odontologico REAL DEFAULT 0, 
+            sindicato REAL DEFAULT 0, vale_farmacia REAL DEFAULT 0, ano_ref TEXT DEFAULT '2026'
         )
     ''')
     cursor.execute('''
@@ -47,7 +50,8 @@ def calcular_irrf(salario_contribuicao, desconto_inss):
     if base <= 4664.68: return (base * 0.225) - 662.77
     return (base * 0.275) - 896.00
 
-
+# Inicializa o banco de dados antes do servidor subir
+iniciar_banco()
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -80,7 +84,7 @@ def listar_funcionarios():
     cursor.execute('SELECT * FROM funcionarios')
     linhas = cursor.fetchall()
     conexao.close()
-    return jsonify([dict(linha) for child, linha in enumerate(linhas)])
+    return jsonify([dict(linha) for linha in linhas])
 
 @app.route('/api/funcionarios/<int:id_func>', methods=['DELETE'])
 def demitir_funcionario(id_func):
@@ -90,8 +94,6 @@ def demitir_funcionario(id_func):
     conexao.commit()
     conexao.close()
     return jsonify({'status': 'removido'})
-
-
 @app.route('/api/calcular', methods=['POST'])
 def calcular_e_salvar():
     dados = request.json
@@ -105,7 +107,8 @@ def calcular_e_salvar():
     cargo = dados.get('cargo', '')
     observacoes = dados.get('observacoes', '')
     data_admissao = dados.get('dataAdmissao', '')
-    mes_ref = dados.get('mesRef', '')
+    mes_ref = dados.get('mesRef', '7')
+    ano_ref = dados.get('anoRef', '2026')
     turno = dados.get('turno', 'diurno')
     hora_entrada = dados.get('horaEntrada', '08:00')
     regime_he = dados.get('regimeHe', 'pagar')
@@ -121,6 +124,15 @@ def calcular_e_salvar():
     aplicar_adiantamento = dados.get('adiantamento', 'nao') == 'sim'
     descontar_vt = dados.get('vt', 'nao') == 'sim'
     
+    # Validação automática da Data de Admissão em relação à folha corrente
+    if data_admissao and mes_ref and ano_ref:
+        try:
+            adm_dt = datetime.strptime(data_admissao, "%Y-%m-%d")
+            ref_dt = datetime(int(ano_ref), int(mes_ref), 1)
+            if ref_dt < datetime(adm_dt.year, adm_dt.month, 1):
+                return jsonify({'status': 'erro', 'message': 'Referência anterior à admissão!'}), 400
+        except Exception: pass
+
     valor_hora = salario_base / horas_comp
     adicional_noturno = salario_base * 0.20 if turno == 'noturno' else 0
     
@@ -147,7 +159,6 @@ def calcular_e_salvar():
     valor_adiantamento = (proventos_totais - descontos_totais) * 0.40 if aplicar_adiantamento else 0
     total_descontos_final = descontos_totais + valor_adiantamento
     liquido_final = proventos_totais - total_descontos_final
-    
     conexao = sqlite3.connect(DB_FILE)
     cursor = conexao.cursor()
     if id_func:
@@ -155,44 +166,28 @@ def calcular_e_salvar():
             UPDATE funcionarios SET nome=?, cargo=?, salario=?, horas_comp=?, insalubridade=?, beneficios=?, qtd_filhos=?, 
             observacoes=?, data_admissao=?, mes_ref=?, v_he_semana=?, v_he_sabado=?, v_he_domingo=?, total_he_ganho=?, 
             reflexo_13_ferias=?, salario_familia=?, inss=?, irrf=?, vt=?, adiantamento_valor=?, total_descontos=?, liquido=?,
-            banco_horas=?, turno=?, hora_entrada=?, adicional_noturno=?, regime_he=?, departamento=? WHERE id=?
+            banco_horas=?, turno=?, hora_entrada=?, adicional_noturno=?, regime_he=?, departamento=?,
+            plano_saude=?, plano_odontologico=?, sindicato=?, vale_farmacia=?, ano_ref=? WHERE id=?
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
-              valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento, id_func))
+              valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, id_func))
     else:
         cursor.execute('''
             INSERT INTO funcionarios (nome, cargo, salario, horas_comp, insalubridade, beneficios, qtd_filhos, 
             observacoes, data_admissao, mes_ref, v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, 
             reflexo_13_ferias, salario_familia, inss, irrf, vt, adiantamento_valor, total_descontos, liquido,
-            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
+            plano_saude, plano_odontologico, sindicato, vale_farmacia, ano_ref)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
-              valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento))
+              valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref))
     conexao.commit()
     conexao.close()
     return jsonify({'status': 'sucesso'})
 
-@app.route('/api/rescisao', methods=['POST'])
-def calcular_rescisao():
-    dados = request.json
-    salario_base = float(dados.get('salario', 0))
-    tipo_rescisao = dados.get('tipoRescisao', 'demissao_sem_justa')
-    saldo_salario = salario_base * 0.5
-    decimo_terceiro = (salario_base / 12) * 6
-    ferias_prop = (salario_base / 12) * 6
-    terco = ferias_prop / 3
-    valor_aviso = salario_base if tipo_rescisao == 'demissao_sem_justa' else 0
-    desconto_aviso = salario_base if tipo_rescisao == 'pedido_demissao' else 0
-    total_prov = saldo_salario + decimo_terceiro + ferias_prop + terco + valor_aviso
-    total_desc = calcular_inss(saldo_salario + decimo_terceiro) + desconto_aviso
-    return jsonify({
-        'saldoSalario': saldo_salario, 'decimoTerceiroProp': decimo_terceiro, 'feriasProporcionais': ferias_prop,
-        'tercoConstitucional': terco, 'valorAvisoPrevio': valor_aviso, 'descontoAviso': desconto_aviso,
-        'totalProventos': total_prov, 'inss': calcular_inss(saldo_salario + decimo_terceiro), 'liquido': total_prov - total_desc, 'tipo': tipo_rescisao
-    })
-
-iniciar_banco()
 if __name__ == '__main__':
-    porta = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=porta, debug=True)
+    # Configurado para rodar localmente na porta 5000
+    app.run(debug=True, host='0.0.0.0', port=5000)
