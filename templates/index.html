@@ -27,8 +27,6 @@
 
         /* --- SISTEMA DE ACESSIBILIDADE VISUAL (Toda a página) --- */
         html { font-size: 16px; transition: font-size 0.15s ease; }
-        
-        /* Tema Escuro Adaptativo */
         body.dark-mode { background-color: #121212 !important; color: #e2e8f0 !important; }
         body.dark-mode .card, body.dark-mode .chart-box { background: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
         body.dark-mode .chart-box h4 { color: #38bdf8 !important; border-bottom-color: #334155 !important; }
@@ -77,18 +75,12 @@
                 <div class="form-group">
                     <label>Mês de Referência</label>
                     <select id="mes_referencia">
-                        <option value="1">Janeiro</option>
-                        <option value="2">Fevereiro</option>
-                        <option value="3">Março</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Maio</option>
-                        <option value="6">Junho</option>
-                        <option value="7" selected>Julho</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Setembro</option>
-                        <option value="10">Outubro</option>
-                        <option value="11">Novembro</option>
-                        <option value="12">Dezembro</option>
+                        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                        <option value="3">Março</option><option value="4">Abril</option>
+                        <option value="5">Maio</option><option value="6">Junho</option>
+                        <option value="7" selected>Julho</option><option value="8">Agosto</option>
+                        <option value="9">Setembro</option><option value="10">Outubro</option>
+                        <option value="11">Novembro</option><option value="12">Dezembro</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -204,7 +196,7 @@
                     <th>Cargo / Departamento</th>
                     <th>Jornada / Turno</th>
                     <th>Líquido Final</th>
-                    <th style="width: 250px;">Ações Legais e Rescisórias</th>
+                    <th style="width: 260px;">Ações Legais e Rescisórias</th>
                 </tr>
             </thead>
             <tbody id="tabela_corpo"></tbody>
@@ -212,61 +204,8 @@
     </div>
 </div>
 
-<!-- Template Oculto para Área de Impressão do Holerite Individual -->
-<div id="print-area" style="display: none;">
-    <div id="holerite_modelo" style="font-family: Arial, sans-serif; border: 2px solid #000; padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; background: #fff; color: #000;">
-        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
-            <div>
-                <h3 style="margin: 0;">TERCEIRO ADM ASSOCIADOS</h3>
-                <p style="margin: 2px 0; font-size: 0.85rem;">Demonstrativo de Pagamento de Salário</p>
-            </div>
-            <div style="text-align: right;">
-                <p style="margin: 0; font-weight: bold;">Referência: <span id="holerite_ref_mes_ano">--/----</span></p>
-            </div>
-        </div>
-        
-        <div style="border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px; font-size: 0.9rem;">
-            <p style="margin: 4px 0;"><strong>Funcionário:</strong> <span id="holerite_nome">--</span></p>
-            <p style="margin: 4px 0;"><strong>Cargo:</strong> <span id="holerite_cargo">--</span> | <strong>Admissão:</strong> <span id="holerite_data_admissao">--/--/----</span></p>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 15px;">
-            <thead>
-                <tr style="border-bottom: 2px solid #000; border-top: 1px solid #000;">
-                    <th style="text-align: left; padding: 5px;">Descrição</th>
-                    <th style="text-align: right; padding: 5px;">Proventos (R$)</th>
-                    <th style="text-align: right; padding: 5px;">Descontos (R$)</th>
-                </tr>
-            </thead>
-            <tbody id="holerite_itens_corpo">
-                <!-- Injetados via Javascript dinamicamente -->
-            </tbody>
-        </table>
-
-        <!-- Seção de Rodapé Informativo: Totalizadores e FGTS -->
-        <div style="display: flex; justify-content: space-between; border-top: 2px solid #000; padding-top: 8px; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px;">
-            <div>
-                <p style="margin: 2px 0; font-size: 0.8rem; color: #333;">FGTS Recolhido no Mês (Informativo): <span id="holerite_fgts_mes">R$ 0,00</span></p>
-            </div>
-            <div style="text-align: right;">
-                <p style="margin: 2px 0;">Total Proventos: <span id="holerite_total_proventos">R$ 0,00</span></p>
-                <p style="margin: 2px 0;">Total Descontos: <span id="holerite_total_descontos">R$ 0,00</span></p>
-                <p style="margin: 4px 0; font-size: 1.05rem; border-top: 1px solid #000; padding-top: 4px;">Líquido a Receber: <span id="holerite_valor_liquido">R$ 0,00</span></p>
-            </div>
-        </div>
-
-        <!-- Bloco para Exibição das Observações Impressas -->
-        <div style="margin-top: 15px; font-size: 0.8rem; border: 1px solid #000; padding: 8px; border-radius: 4px; background-color: #fafafa;">
-            <strong>Observações / Mensagens da Empresa:</strong>
-            <p id="holerite_campo_observacoes" style="margin: 5px 0 0 0; font-style: italic; color: #333;">Nenhuma observação informada.</p>
-        </div>
-
-        <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 0.85rem;">
-            <div style="width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Data: ____/____/______</div>
-            <div style="width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Assinatura do Colaborador</div>
-        </div>
-    </div>
-</div>
+<!-- Template Oculto para Área de Impressão de Balanço Dinâmico -->
+<div id="print-area" style="display: none;"></div>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
