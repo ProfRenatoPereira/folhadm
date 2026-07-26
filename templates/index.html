@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="static/logo.png">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
+        /* Estrutura Base e Painéis Dinâmicos */
         .bi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
         .chart-box { background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .chart-box h4 { color: #1e3a8a; margin-bottom: 1rem; font-size: 1.1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
@@ -23,14 +24,42 @@
         .linear-bar-fill { background: #0284c7; height: 100%; width: 0%; transition: width 0.5s; }
         .linear-value { width: 75px; text-align: right; font-weight: bold; color: #0284c7; }
         .btn-control { padding: 0.5rem; font-size: 0.85rem; font-weight: bold; cursor: pointer; border-radius: 6px; }
+
+        /* --- SISTEMA DE ACESSIBILIDADE VISUAL (Toda a página) --- */
+        html { font-size: 16px; transition: font-size 0.15s ease; }
+        
+        /* Tema Escuro Adaptativo */
+        body.dark-mode { background-color: #121212 !important; color: #e2e8f0 !important; }
+        body.dark-mode .card, body.dark-mode .chart-box { background: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
+        body.dark-mode .chart-box h4 { color: #38bdf8 !important; border-bottom-color: #334155 !important; }
+        body.dark-mode input, body.dark-mode select { background: #0f172a !important; color: #fff !important; border-color: #334155 !important; }
+        body.dark-mode .bar-label { color: #cbd5e1 !important; }
+
+        /* Alto Contraste Extremo */
+        body.alto-contraste { background-color: #000000 !important; color: #ffff00 !important; }
+        body.alto-contraste .card, body.alto-contraste .chart-box, body.alto-contraste table, body.alto-contraste th, body.alto-contraste td { background: #000000 !important; color: #ffffff !important; border: 2px solid #ffffff !important; }
+        body.alto-contraste input, body.alto-contraste select { background: #000000 !important; color: #ffff00 !important; border: 2px solid #ffff00 !important; }
+        body.alto-contraste button, body.alto-contraste .btn-print { background: #ffffff !important; color: #000000 !important; border: 2px solid #000000 !important; font-weight: bold !important; }
+        body.alto-contraste h1, body.alto-contraste h3, body.alto-contraste h4 { color: #ffff00 !important; }
+        body.alto-contraste .bar-native { background: #ffffff !important; color: #000000 !important; }
+        body.alto-contraste .linear-bar-fill { background: #ffff00 !important; }
     </style>
 </head>
 <body>
+
+<!-- Barra Superior de Ferramentas de Acessibilidade Geral -->
+<div id="barra-acessibilidade" style="background: #0f172a; padding: 0.5rem 1rem; display: flex; justify-content: flex-end; gap: 0.8rem; align-items: center; color: #fff; font-size: 0.85rem; font-family: sans-serif; border-bottom: 1px solid #334155;">
+    <span>♿ Acessibilidade:</span>
+    <button type="button" onclick="mudarFonte(1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A+</button>
+    <button type="button" onclick="mudarFonte(-1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A-</button>
+    <button type="button" onclick="alternarAltoContraste()" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">⚫ Alto Contraste</button>
+    <button type="button" id="btn_tema" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🌙 Modo Escuro</button>
+    <button type="button" id="btn-leitor-audio" onclick="alternarLeitorAudio()" style="background: #0284c7; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🔊 Ativar Leitor</button>
+</div>
 <div class="container">
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 0.75rem;">
         <div style="display: flex; align-items: center; gap: 1.2rem;">
-<img src="{{ url_for('static', filename='logo.png') }}" alt=" Logo TERADMAS" style=" height: 65px; width: auto; object-fit: contain;">
-
+            <img src="{{ url_for('static', filename='logo.png') }}" alt=" Logo TERADMAS" style=" height: 65px; width: auto; object-fit: contain;">
             <div>
                 <h1 style="margin: 0; color: var(--primary); font-size: 1.8rem;">TERCEIRO ADM ASSOCIADOS</h1>
                 <p style="margin: 3px 0 0 0; font-size: 0.9rem; color: #475569;">Gerenciador de Pessoal | Abordagem Pedagógico-Didática de Custos</p>
@@ -44,11 +73,28 @@
     <div class="grid-config">
         <div class="card">
             <h3>Gestão de Caixa & Cargos</h3>
-            <div class="form-group">
-                <label>Mês de Referência</label>
-                <select id="mes_referencia">
-                    <option value="Julho" selected>Julho</option><option value="Dezembro">Dezembro</option>
-                </select>
+            <div class="grid-config" style="grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0;">
+                <div class="form-group">
+                    <label>Mês de Referência</label>
+                    <select id="mes_referencia">
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7" selected>Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ano de Referência</label>
+                    <input type="number" id="ano_referencia" value="2026" min="2000" max="2100">
+                </div>
             </div>
             <div class="form-group"><label>Receita Mensal (R$)</label><input type="number" id="receita_empresa" value="150000"></div>
             <div class="form-group"><label>Limite Total de Pessoal</label><input type="number" id="limite_func" value="10"></div>
@@ -61,8 +107,7 @@
             </div>
         </div>
 
-
-                <div class="card">
+        <div class="card">
             <h3>Cadastro & Jornada</h3>
             <input type="hidden" id="func_id_edicao" value="">
             <div class="form-group"><label>Nome Completo</label><input type="text" id="nome" placeholder="Ex: Renato Silva"></div>
@@ -110,12 +155,12 @@
         <div class="card">
             <h3>Retenções & Promoção</h3>
             <div class="grid-config" style="grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0;">
-                <div class="form-group"><label>Plano Saúde</label><input type="number" id="plano_saude" value="0"></div>
-                <div class="form-group"><label>Plano Odonto</label><input type="number" id="plano_odonto" value="0"></div>
+                <div class="form-group"><label>Vale Farmácia (R$)</label><input type="number" id="vale_farmacia" value="0"></div>
+                <div class="form-group"><label>Sindicato (R$)</label><input type="number" id="sindicato" value="0"></div>
             </div>
             <div class="grid-config" style="grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0;">
-                <div class="form-group"><label>Vale Farmácia</label><input type="number" id="vale_farmacia" value="0"></div>
-                <div class="form-group"><label>Sindicato</label><input type="number" id="sindicato" value="0"></div>
+                <div class="form-group"><label>Plano de Saúde (R$)</label><input type="number" id="plano_saude" value="0"></div>
+                <div class="form-group"><label>Plano Odontol. (R$)</label><input type="number" id="plano_odontologico" value="0"></div>
             </div>
             <div class="grid-config" style="grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0;">
                 <div class="form-group">
@@ -166,7 +211,63 @@
         </table>
     </div>
 </div>
-<div id="print-area"></div>
+
+<!-- Template Oculto para Área de Impressão do Holerite Individual -->
+<div id="print-area" style="display: none;">
+    <div id="holerite_modelo" style="font-family: Arial, sans-serif; border: 2px solid #000; padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; background: #fff; color: #000;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <div>
+                <h3 style="margin: 0;">TERCEIRO ADM ASSOCIADOS</h3>
+                <p style="margin: 2px 0; font-size: 0.85rem;">Demonstrativo de Pagamento de Salário</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin: 0; font-weight: bold;">Referência: <span id="holerite_ref_mes_ano">--/----</span></p>
+            </div>
+        </div>
+        
+        <div style="border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+            <p style="margin: 4px 0;"><strong>Funcionário:</strong> <span id="holerite_nome">--</span></p>
+            <p style="margin: 4px 0;"><strong>Cargo:</strong> <span id="holerite_cargo">--</span> | <strong>Admissão:</strong> <span id="holerite_data_admissao">--/--/----</span></p>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 15px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #000; border-top: 1px solid #000;">
+                    <th style="text-align: left; padding: 5px;">Descrição</th>
+                    <th style="text-align: right; padding: 5px;">Proventos (R$)</th>
+                    <th style="text-align: right; padding: 5px;">Descontos (R$)</th>
+                </tr>
+            </thead>
+            <tbody id="holerite_itens_corpo">
+                <!-- Injetados via Javascript dinamicamente -->
+            </tbody>
+        </table>
+
+        <!-- Seção de Rodapé Informativo: Totalizadores e FGTS -->
+        <div style="display: flex; justify-content: space-between; border-top: 2px solid #000; padding-top: 8px; font-size: 0.9rem; font-weight: bold; margin-bottom: 20px;">
+            <div>
+                <p style="margin: 2px 0; font-size: 0.8rem; color: #333;">FGTS Recolhido no Mês (Informativo): <span id="holerite_fgts_mes">R$ 0,00</span></p>
+            </div>
+            <div style="text-align: right;">
+                <p style="margin: 2px 0;">Total Proventos: <span id="holerite_total_proventos">R$ 0,00</span></p>
+                <p style="margin: 2px 0;">Total Descontos: <span id="holerite_total_descontos">R$ 0,00</span></p>
+                <p style="margin: 4px 0; font-size: 1.05rem; border-top: 1px solid #000; padding-top: 4px;">Líquido a Receber: <span id="holerite_valor_liquido">R$ 0,00</span></p>
+            </div>
+        </div>
+
+        <!-- Bloco para Exibição das Observações Impressas -->
+        <div style="margin-top: 15px; font-size: 0.8rem; border: 1px solid #000; padding: 8px; border-radius: 4px; background-color: #fafafa;">
+            <strong>Observações / Mensagens da Empresa:</strong>
+            <p id="holerite_campo_observacoes" style="margin: 5px 0 0 0; font-style: italic; color: #333;">Nenhuma observação informada.</p>
+        </div>
+
+        <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+            <div style="width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Data: ____/____/______</div>
+            <div style="width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px;">Assinatura do Colaborador</div>
+        </div>
+    </div>
+</div>
+
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
