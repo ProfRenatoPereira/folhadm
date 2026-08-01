@@ -23,7 +23,8 @@ def iniciar_banco():
             reflexo_13_ferias REAL, salario_familia REAL, inss REAL, irrf REAL, vt REAL,
             adiantamento_valor REAL, total_descontos REAL, liquido REAL,
             banco_horas REAL, turno TEXT, hora_entrada TEXT, adicional_noturno REAL, regime_he TEXT, departamento TEXT,
-            plano_saude REAL DEFAULT 0, plano_odontologico REAL DEFAULT 0, sindicato REAL DEFAULT 0, vale_farmacia REAL DEFAULT 0, ano_ref TEXT DEFAULT '2026'
+            plano_saude REAL DEFAULT 0, plano_odontologico REAL DEFAULT 0, sindicato REAL DEFAULT 0, vale_farmacia REAL DEFAULT 0, ano_ref TEXT DEFAULT '2026',
+            v_he_25 REAL DEFAULT 0, v_he_50 REAL DEFAULT 0, v_he_100 REAL DEFAULT 0
         )
     ''')
     cursor.execute('CREATE TABLE IF NOT EXISTS cargos_custom (id SERIAL PRIMARY KEY, nome_cargo TEXT UNIQUE)')
@@ -129,10 +130,14 @@ def calcular_e_salvar():
     banco_horas = 0
     if regime_he == 'pagar':
         total_he_ganho = v_he_semana + v_he_sabado + v_he_domingo
+        v_he_25 = v_he_semana
+        v_he_50 = v_he_sabado
+        v_he_100 = v_he_domingo
         reflexo_13_ferias = total_he_ganho * (2.0 / 12.0)
     else:
         banco_horas = he_semana + he_sabado + he_domingo
         total_he_ganho, reflexo_13_ferias, v_he_semana, v_he_sabado, v_he_domingo = 0, 0, 0, 0, 0
+        v_he_25, v_he_50, v_he_100 = 0, 0, 0
         
     total_salario_familia = qtd_filhos * 62.04 if (salario_base + adicional_noturno) <= 1819.26 and qtd_filhos > 0 else 0
     salario_contribuicao = salario_base + total_he_ganho + insalubridade + reflexo_13_ferias + adicional_noturno
@@ -154,22 +159,22 @@ def calcular_e_salvar():
             observacoes=%s, data_admissao=%s, mes_ref=%s, v_he_semana=%s, v_he_sabado=%s, v_he_domingo=%s, total_he_ganho=%s, 
             reflexo_13_ferias=%s, salario_familia=%s, inss=%s, irrf=%s, vt=%s, adiantamento_valor=%s, total_descontos=%s, liquido=%s,
             banco_horas=%s, turno=%s, hora_entrada=%s, adicional_noturno=%s, regime_he=%s, departamento=%s,
-            plano_saude=%s, plano_odontologico=%s, sindicato=%s, vale_farmacia=%s, ano_ref=%s WHERE id=%s
+            plano_saude=%s, plano_odontologico=%s, sindicato=%s, vale_farmacia=%s, ano_ref=%s, v_he_25=%s, v_he_50=%s, v_he_100=%s WHERE id=%s
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
               valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
-              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, id_func))
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100, id_func))
     else:
         cursor.execute('''
             INSERT INTO funcionarios (nome, cargo, salario, horas_comp, insalubridade, beneficios, qtd_filhos, 
             observacoes, data_admissao, mes_ref, v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, 
             reflexo_13_ferias, salario_familia, inss, irrf, vt, adiantamento_valor, total_descontos, liquido,
-            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento, plano_saude, plano_odontologico, sindicato, vale_farmacia, ano_ref)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento, plano_saude, plano_odontologico, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
               valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
-              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref))
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100))
     conexao.commit()
     cursor.close()
     conexao.close()
