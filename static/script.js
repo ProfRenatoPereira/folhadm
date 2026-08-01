@@ -188,20 +188,34 @@ async function salvarAlteracoesFuncionario() {
 }
 
 function actualizarDashboard() {
+    const elMes = document.getElementById('mes_referencia');
+    const elAno = document.getElementById('ano_referencia');
+    const mesSelecionado = elMes ? elMes.value.trim() : '';
+    const anoSelecionado = elAno ? elAno.value.trim() : '';
+    
     const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
     let totalBruto = 0, totalDescontos = 0, totalLiquido = 0, custoTotalCorporativo = 0;
+    let totalFuncionariosMes = 0;
     
     funcionarios.forEach(f => {
-        totalBruto += f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0);
-        totalDescontos += (f.total_descontos || 0);
-        totalLiquido += (f.liquido || 0);
-        custoTotalCorporativo += f.salario + (f.beneficios || 0) + (f.total_he_ganho || 0) + (f.adicional_noturno || 0);
+        // Normalização das strings para garantir que '7' e '07' coincidam perfeitamente
+        const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
+        const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
+        
+        // Aplica o filtro de competência de mês e ano antes de somar as métricas
+        if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
+            totalFuncionariosMes++;
+            totalBruto += f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0);
+            totalDescontos += (f.total_descontos || 0);
+            totalLiquido += (f.liquido || 0);
+            custoTotalCorporativo += f.salario + (f.beneficios || 0) + (f.total_he_ganho || 0) + (f.adicional_noturno || 0);
+        }
     });
-    
+
     let saldoFinal = receita - custoTotalCorporativo;
     const elTotal = document.getElementById('dash_total_func');
     const elLim = document.getElementById('limite_func');
-    if (elTotal && elLim) elTotal.innerText = funcionarios.length + ' / ' + elLim.value;
+    if (elTotal && elLim) elTotal.innerText = totalFuncionariosMes + ' / ' + elLim.value;
     
     if (document.getElementById('dash_custo_bruto')) document.getElementById('dash_custo_bruto').innerText = formatarMoeda(totalBruto);
     if (document.getElementById('dash_total_descontos')) document.getElementById('dash_total_descontos').innerText = formatarMoeda(totalDescontos);
@@ -212,60 +226,43 @@ function actualizarDashboard() {
     renderizarGraficosNativos(totalLiquido, totalDescontos);
 }
 
-function renderizarGraficosNativos(liquido, descontos) {
-    const total = liquido + descontos;
-    const pizza = document.getElementById('nativePizza');
-    if (pizza) {
-        const perc = total > 0 ? ((descontos / total) * 100).toFixed(1) : 0;
-        pizza.style.background = `conic-gradient(#dc2626 0% ${perc}%, #16a34a ${perc}% 100%)`;
-    }
-    const custosCargo = {};
-    funcionarios.forEach(f => custosCargo[f.cargo] = (custosCargo[f.cargo] || 0) + f.salario);
-    const cargos = Object.keys(custosCargo).sort((a,b) => custosCargo[b] - custosCargo[a]);
-    const maxCusto = cargos.length > 0 ? custosCargo[cargos[0]] : 1;
-    const containerPareto = document.getElementById('nativePareto');
-    if (containerPareto) {
-        containerPareto.innerHTML = '';
-        cargos.slice(0, 4).forEach(c => {
-            const pct = maxCusto > 0 ? (custosCargo[c] / maxCusto) * 100 : 0;
-            containerPareto.innerHTML += `<div class="bar-wrapper"><div class="bar-native" style="height: ${pct}%">${pct.toFixed(0)}%</div><div class="bar-label">${c}</div></div>`;
-        });
-    }
-    const containerLinear = document.getElementById('nativeLinear');
-    if (containerLinear) {
-        containerLinear.innerHTML = '';
-        const maxBruto = funcionarios.length > 0 ? Math.max(...funcionarios.map(f => f.salario)) : 1;
-        funcionarios.slice(-4).forEach(f => {
-            const pct = maxBruto > 0 ? (f.salario / maxBruto) * 100 : 0;
-            containerLinear.innerHTML += `<div class="linear-row"><div class="linear-name">${f.nome}</div><div class="linear-bar-bg"><div class="linear-bar-fill" style="width: ${pct}%"></div></div><div class="linear-value" style="color:#1e3a8a">${formatarMoeda(f.salario)}</div></div>`;
-        });
-    }
-}
 function renderizarTabela() {
     const corpo = document.getElementById('tabela_corpo');
     if (!corpo) return;
     corpo.innerHTML = '';
+    
+    const elMes = document.getElementById('mes_referencia');
+    const elAno = document.getElementById('ano_referencia');
+    const mesSelecionado = elMes ? elMes.value.trim() : '';
+    const anoSelecionado = elAno ? elAno.value.trim() : '';
+    
     funcionarios.forEach(f => {
-        const dataFormatada = f.data_admissao ? f.data_admissao.split('-').reverse().join('/') : '---';
-        const turnoRotulo = f.turno === 'noturno' ? '🌙 Noturno' : '☀️ Diurno';
-        const jTexto = f.banco_horas > 0 ? f.horas_comp + 'h (+' + f.banco_horas + 'h BH)' : f.horas_comp + 'h';
-        const deptoRotulo = f.departamento ? f.departamento : 'Administrativo';
+        const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
+        const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
         
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td><a id="lnk_${f.id}" style="cursor:pointer; color:var(--primary); text-decoration:underline;"><strong>${f.nome}</strong></a><br><small>Admissão: ${dataFormatada}</small></td>
-        <td>${f.cargo}<br><small style="color:#64748b">Dep: ${deptoRotulo}</small></td>
-        <td><small>Jornada: ${jTexto}</small><br><strong>${turnoRotulo}</strong></td>
-        <td style="color:#16a34a"><strong>${formatarMoeda(f.liquido)}</strong></td>
-        <td class="actions-cell" style="display: flex; gap: 4px; align-items: center; justify-content: flex-start; wrap: nowrap;">
-            <a onclick="abrirContracheque(${f.id})" class="btn-link" title="Holerite Mensal">📄 Mês</a>
-            <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a" title="Recibo de Férias">🌴 Férias</a>
-            <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7" title="13º Individual">🎄 13º</a>
-            <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
-            <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
-            <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
-        </td>`;
-        corpo.appendChild(tr);
-        document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
+        // Renderiza apenas os colaboradores que pertencem ao mês e ano selecionados
+        if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
+            const dataFormatada = f.data_admissao ? f.data_admissao.split('-').reverse().join('/') : '---';
+            const turnoRotulo = f.turno === 'noturno' ? '🌙 Noturno' : '☀️ Diurno';
+            const jTexto = f.banco_horas > 0 ? f.horas_comp + 'h (+' + f.banco_horas + 'h BH)' : f.horas_comp + 'h';
+            const deptoRotulo = f.departamento ? f.departamento : 'Administrativo';
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><a id="lnk_${f.id}" style="cursor:pointer; color:var(--primary); text-decoration:underline;"><strong>${f.nome}</strong></a><br><small>Admissão: ${dataFormatada}</small></td>
+            <td>${f.cargo}<br><small style="color:#64748b">Dep: ${deptoRotulo}</small></td>
+            <td><small>Jornada: ${jTexto}</small><br><strong>${turnoRotulo}</strong></td>
+            <td style="color:#16a34a"><strong>${formatarMoeda(f.liquido)}</strong></td>
+            <td class="actions-cell" style="display: flex; gap: 4px; align-items: center; justify-content: flex-start; wrap: nowrap;">
+                <a onclick="abrirContracheque(${f.id})" class="btn-link" title="Holerite Mensal">📄 Mês</a>
+                <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a" title="Recibo de Férias">🌴 Férias</a>
+                <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7" title="13º Individual">🎄 13º</a>
+                <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
+                <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
+                <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
+            </td>`;
+            corpo.appendChild(tr);
+            document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
+        }
     });
 }
 
