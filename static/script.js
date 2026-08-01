@@ -96,7 +96,7 @@ async function adicionarFuncionario() {
     const nome = pegarValor('nome').trim();
     if (!nome) { alert('Insira o nome do profissional.'); return; }
     
-    const dados = {
+       const dados = {
         id: pegarValor('func_id_edicao'),
         nome: nome,
         cargo: pegarValor('cargo'),
@@ -110,6 +110,8 @@ async function adicionarFuncionario() {
         planoOdonto: parseFloat(pegarValor('plano_odontologico')) || 0,
         valeFarmacia: parseFloat(pegarValor('vale_farmacia')) || 0,
         sindicato: parseFloat(pegarValor('sindicato')) || 0,
+        valeRefeicao: parseFloat(pegarValor('vale_refeicao')) || 0,
+        valeMercado: parseFloat(pegarValor('vale_mercado')) || 0,
         adiantamento: pegarValor('adiantamento'),
         vt: pegarValor('vt_desconto'),
         qtdFilhos: parseInt(pegarValor('qtd_filhos')) || 0,
@@ -146,7 +148,7 @@ function limparCamposTela() {
         'he_semana': '0', 'he_sabado': '0', 'he_domingo': '0', 'turno': 'diurno',
         'hora_entrada': '08:00', 'adiantamento': 'nao', 'vt_desconto': 'nao',
         'vale_farmacia': '0', 'sindicato': '0', 'plano_saude': '0', 'plano_odontologico': '0',
-        'novo_aumento_salarial': '0'
+        'novo_aumento_salarial': '0', 'vale_refeicao': '0', 'vale_mercado': '0'
     };
     Object.keys(padroes).forEach(id => {
         const el = document.getElementById(id);
@@ -155,6 +157,7 @@ function limparCamposTela() {
     const btn = document.getElementById('btn_contratar');
     if (btn) btn.innerText = 'Contratar Profissional';
 }
+
 function carregarFuncionarioParaEdicao(f) {
     const mapeamento = {
         'func_id_edicao': f.id, 'nome': f.nome, 'cargo': f.cargo, 'salario': f.salario,
@@ -162,7 +165,8 @@ function carregarFuncionarioParaEdicao(f) {
         'qtd_filhos': f.qtd_filhos, 'observacoes': f.observacoes || '', 'data_admissao': f.data_admissao,
         'turno': f.turno, 'hora_entrada': f.hora_entrada, 'departamento': f.departamento,
         'vale_farmacia': f.vale_farmacia || 0, 'sindicato': f.sindicato || 0,
-        'plano_saude': f.plano_saude || 0, 'plano_odontologico': f.plano_odontologico || 0
+        'plano_saude': f.plano_saude || 0, 'plano_odontologico': f.plano_odontologico || 0,
+        'vale_refeicao': f.vale_refeicao || 0, 'vale_mercado': f.vale_mercado || 0
     };
     Object.keys(mapeamento).forEach(id => {
         const el = document.getElementById(id);
@@ -288,6 +292,7 @@ function abrirContracheque(id) {
     if (!f) return;
     const proventos = f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0) + (f.beneficios || 0) + (f.salario_familia || 0);
     const saude = f.plano_saude || 0; const odonto = f.plano_odontologico || 0; const sind = f.sindicato || 0; const farmacia = f.vale_farmacia || 0;
+    const vrDesconto = f.vale_refeicao || 0; const vmDesconto = f.vale_mercado || 0;
     const totalDeducoesAtuais = (f.total_descontos || 0);
     const baseFgts = f.salario + (f.total_he_ganho || 0) + (f.adicional_noturno || 0) + (f.insalubridade || 0);
     const fgtsMes = baseFgts * 0.08;
@@ -300,15 +305,12 @@ function abrirContracheque(id) {
     html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p><p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + "</p></div>";
     html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Salário Base</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
     
-    // Verificação de segurança para compatibilidade com registros antigos do banco
     const temHeNova = (f.v_he_25 > 0 || f.v_he_50 > 0 || f.v_he_100 > 0);
-    
     if (temHeNova) {
         if (f.v_he_25 > 0) html += "<tr><td>(+) Horas Extras (25%)</td><td class='text-right'>" + formatarMoeda(f.v_he_25) + "</td></tr>";
         if (f.v_he_50 > 0) html += "<tr><td>(+) Horas Extras (50%)</td><td class='text-right'>" + formatarMoeda(f.v_he_50) + "</td></tr>";
         if (f.v_he_100 > 0) html += "<tr><td>(+) Horas Extras (100%)</td><td class='text-right'>" + formatarMoeda(f.v_he_100) + "</td></tr>";
     } else if (f.total_he_ganho > 0) {
-        // Fallback: Exibe a linha acumulada caso o registro seja antigo e as colunas novas estejam zeradas/nulas
         html += "<tr><td>(+) Horas Extras Acumuladas</td><td class='text-right'>" + formatarMoeda(f.total_he_ganho) + "</td></tr>";
     }
     
@@ -324,6 +326,8 @@ function abrirContracheque(id) {
     if (odonto > 0) html += "<tr><td>(-) Plano Odontológico</td><td class='text-right'>" + formatarMoeda(odonto) + "</td></tr>";
     if (sind > 0) html += "<tr><td>(-) Contribuição Sindical</td><td class='text-right'>" + formatarMoeda(sind) + "</td></tr>";
     if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
+    if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
+    if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
     html += "<tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDeducoesAtuais) + "</td></tr></table>";
     html += "<div class='liquido-box'><span class='liquido-label'>VALOR LÍQUIDO A RECEBER:</span><span class='liquido-value'>" + formatarMoeda(proventos - totalDeducoesAtuais) + "</span></div>";
     html += "<div style='margin-top:20px; font-size:0.85rem; border:1px solid #000; padding:10px; background:#fafafa;'><strong>FGTS recolhido no mês (Informativo):</strong> " + formatarMoeda(fgtsMes) + "<br><br><strong>Observações de Aula/Empresa:</strong><br><span style='font-style:italic; color:#334155;'>" + obsEmpresa + "</span></div>";
