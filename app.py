@@ -15,8 +15,6 @@ def obter_conexao():
 def iniciar_banco():
     conexao = obter_conexao()
     cursor = conexao.cursor()
-    
-    # 1. Garante a criação da tabela base caso o banco esteja limpo
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS funcionarios (
             id SERIAL PRIMARY KEY, nome TEXT NOT NULL, cargo TEXT, salario REAL, horas_comp REAL, insalubridade REAL,
@@ -29,20 +27,21 @@ def iniciar_banco():
         )
     ''')
     
-    # 2. Migração Segura: Adiciona individualmente as novas colunas estruturais se elas não existirem
+    # Migração Segura: Adiciona individualmente as novas colunas caso elas já não existam no Supabase
     try:
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_25 REAL DEFAULT 0;")
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_50 REAL DEFAULT 0;")
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_100 REAL DEFAULT 0;")
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS vale_refeicao REAL DEFAULT 0;")
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS vale_mercado REAL DEFAULT 0;")
     except psycopg2.Error:
-        pass  # Evita travar a inicialização se já existirem
+        pass
 
     cursor.execute('CREATE TABLE IF NOT EXISTS cargos_custom (id SERIAL PRIMARY KEY, nome_cargo TEXT UNIQUE)')
     cursor.execute("SELECT COUNT(*) FROM cargos_custom")
     if cursor.fetchone()[0] == 0:
         cargos = [("Diretoria",), ("Gerência",), ("Analista",), ("Operacional",)]
         cursor.executemany("INSERT INTO cargos_custom (nome_cargo) VALUES (%s)", cargos)
-        
     conexao.commit()
     cursor.close()
     conexao.close()
@@ -124,6 +123,7 @@ def calcular_e_salvar():
     regime_he, departamento = dados.get('regimeHe', 'pagar'), dados.get('departamento', 'Administrativo')
     he_semana, he_sabado, he_domingo = float(dados.get('heSemana', 0)), float(dados.get('heSabado', 0)), float(dados.get('heDomingo', 0))
     sindicato, plano_saude, plano_odonto, vale_farmacia = float(dados.get('sindicato', 0)), float(dados.get('planoSaude', 0)), float(dados.get('planoOdonto', 0)), float(dados.get('valeFarmacia', 0))
+    vale_refeicao, vale_mercado = float(dados.get('valeRefeicao', 0)), float(dados.get('valeMercado', 0))
     aplicar_adiantamento, descontar_vt = dados.get('adiantamento', 'nao') == 'sim', dados.get('vt', 'nao') == 'sim'
     
     if data_admissao and mes_ref and ano_ref:
@@ -157,7 +157,7 @@ def calcular_e_salvar():
     vt = salario_base * 0.06 if descontar_vt else 0
     
     proventos_totais = salario_base + beneficios + total_he_ganho + insalubridade + reflexo_13_ferias + total_salario_familia + adicional_noturno
-    descontos_totais = inss + irrf + vt + sindicato + plano_saude + plano_odonto + vale_farmacia
+    descontos_totais = inss + irrf + vt + sindicato + plano_saude + plano_odonto + vale_farmacia + vale_refeicao + vale_mercado
     valor_adiantamento = (proventos_totais - descontos_totais) * 0.40 if aplicar_adiantamento else 0
     total_descontos_final = descontos_totais + valor_adiantamento
     liquido_final = proventos_totais - total_descontos_final
@@ -170,22 +170,22 @@ def calcular_e_salvar():
             observacoes=%s, data_admissao=%s, mes_ref=%s, v_he_semana=%s, v_he_sabado=%s, v_he_domingo=%s, total_he_ganho=%s, 
             reflexo_13_ferias=%s, salario_familia=%s, inss=%s, irrf=%s, vt=%s, adiantamento_valor=%s, total_descontos=%s, liquido=%s,
             banco_horas=%s, turno=%s, hora_entrada=%s, adicional_noturno=%s, regime_he=%s, departamento=%s,
-            plano_saude=%s, plano_odontologico=%s, sindicato=%s, vale_farmacia=%s, ano_ref=%s, v_he_25=%s, v_he_50=%s, v_he_100=%s WHERE id=%s
+            plano_saude=%s, plano_odontologico=%s, sindicato=%s, vale_farmacia=%s, ano_ref=%s, v_he_25=%s, v_he_50=%s, v_he_100=%s, vale_refeicao=%s, vale_mercado=%s WHERE id=%s
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
               valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
-              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100, id_func))
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100, vale_refeicao, vale_mercado, id_func))
     else:
         cursor.execute('''
             INSERT INTO funcionarios (nome, cargo, salario, horas_comp, insalubridade, beneficios, qtd_filhos, 
             observacoes, data_admissao, mes_ref, v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, 
             reflexo_13_ferias, salario_familia, inss, irrf, vt, adiantamento_valor, total_descontos, liquido,
-            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento, plano_saude, plano_odontologico, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento, plano_saude, plano_odontologico, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100, vale_refeicao, vale_mercado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (nome, cargo, salario_base, horas_comp, insalubridade, beneficios, qtd_filhos, observacoes, data_admissao, mes_ref, 
               v_he_semana, v_he_sabado, v_he_domingo, total_he_ganho, reflexo_13_ferias, total_salario_familia, inss, irrf, vt, 
               valor_adiantamento, total_descontos_final, liquido_final, banco_horas, turno, hora_entrada, adicional_noturno, regime_he, departamento,
-              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100))
+              plano_saude, plano_odonto, sindicato, vale_farmacia, ano_ref, v_he_25, v_he_50, v_he_100, vale_refeicao, vale_mercado))
     conexao.commit()
     cursor.close()
     conexao.close()
