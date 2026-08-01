@@ -293,6 +293,10 @@ function abrirContracheque(id) {
     const proventos = f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0) + (f.beneficios || 0) + (f.salario_familia || 0);
     const saude = f.plano_saude || 0; const odonto = f.plano_odontologico || 0; const sind = f.sindicato || 0; const farmacia = f.vale_farmacia || 0;
     const vrDesconto = f.vale_refeicao || 0; const vmDesconto = f.vale_mercado || 0;
+    
+    // Força a leitura do adiantamento buscando as duas chaves possíveis para evitar conflito com o histórico do banco
+    const adiantVal = parseFloat(f.adiantamento_valor || f.adiantamento || 0);
+    
     const totalDeducoesAtuais = (f.total_descontos || 0);
     const baseFgts = f.salario + (f.total_he_ganho || 0) + (f.adicional_noturno || 0) + (f.insalubridade || 0);
     const fgtsMes = baseFgts * 0.08;
@@ -328,7 +332,15 @@ function abrirContracheque(id) {
     if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
     if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
     if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
+        if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
+    if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
+    if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
+    
+    // Injeção limpa da linha de adiantamento quinzenal na tabela de retenções
+    if (adiantVal > 0) html += "<tr><td>(-) Adiantamento Quinzenal</td><td class='text-right'>" + formatarMoeda(adiantVal) + "</td></tr>";
+    
     html += "<tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDeducoesAtuais) + "</td></tr></table>";
+
     html += "<div class='liquido-box'><span class='liquido-label'>VALOR LÍQUIDO A RECEBER:</span><span class='liquido-value'>" + formatarMoeda(proventos - totalDeducoesAtuais) + "</span></div>";
     html += "<div style='margin-top:20px; font-size:0.85rem; border:1px solid #000; padding:10px; background:#fafafa;'><strong>FGTS recolhido no mês (Informativo):</strong> " + formatarMoeda(fgtsMes) + "<br><br><strong>Observações de Aula/Empresa:</strong><br><span style='font-style:italic; color:#334155;'>" + obsEmpresa + "</span></div>";
     html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
