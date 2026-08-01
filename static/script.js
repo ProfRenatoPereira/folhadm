@@ -100,7 +100,7 @@ async function adicionarFuncionario() {
         valeFarmacia: parseFloat(pegarValor('vale_farmacia')) || 0,
         sindicato: parseFloat(pegarValor('sindicato')) || 0,
         valeRefeicao: parseFloat(pegarValor('vale_refeicao')) || 0,
-        valeMercado: parseFloat(pegarValor('vale_mercado')) || 0,
+        valeMercado: parseFloat(pegarValor('vale_mercado')) || 0, // <- CORRIGIDO DE valeMarket PARA valeMercado
         adiantamento: pegarValor('adiantamento'),
         vt: pegarValor('vt_desconto'),
         qtdFilhos: parseInt(pegarValor('qtd_filhos')) || 0,
