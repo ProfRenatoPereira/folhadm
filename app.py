@@ -15,6 +15,8 @@ def obter_conexao():
 def iniciar_banco():
     conexao = obter_conexao()
     cursor = conexao.cursor()
+    
+    # 1. Garante a criação da tabela base caso o banco esteja limpo
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS funcionarios (
             id SERIAL PRIMARY KEY, nome TEXT NOT NULL, cargo TEXT, salario REAL, horas_comp REAL, insalubridade REAL,
@@ -23,15 +25,24 @@ def iniciar_banco():
             reflexo_13_ferias REAL, salario_familia REAL, inss REAL, irrf REAL, vt REAL,
             adiantamento_valor REAL, total_descontos REAL, liquido REAL,
             banco_horas REAL, turno TEXT, hora_entrada TEXT, adicional_noturno REAL, regime_he TEXT, departamento TEXT,
-            plano_saude REAL DEFAULT 0, plano_odontologico REAL DEFAULT 0, sindicato REAL DEFAULT 0, vale_farmacia REAL DEFAULT 0, ano_ref TEXT DEFAULT '2026',
-            v_he_25 REAL DEFAULT 0, v_he_50 REAL DEFAULT 0, v_he_100 REAL DEFAULT 0
+            plano_saude REAL DEFAULT 0, plano_odontologico REAL DEFAULT 0, sindicato REAL DEFAULT 0, vale_farmacia REAL DEFAULT 0, ano_ref TEXT DEFAULT '2026'
         )
     ''')
+    
+    # 2. Migração Segura: Adiciona individualmente as novas colunas estruturais se elas não existirem
+    try:
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_25 REAL DEFAULT 0;")
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_50 REAL DEFAULT 0;")
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_100 REAL DEFAULT 0;")
+    except psycopg2.Error:
+        pass  # Evita travar a inicialização se já existirem
+
     cursor.execute('CREATE TABLE IF NOT EXISTS cargos_custom (id SERIAL PRIMARY KEY, nome_cargo TEXT UNIQUE)')
     cursor.execute("SELECT COUNT(*) FROM cargos_custom")
     if cursor.fetchone()[0] == 0:
         cargos = [("Diretoria",), ("Gerência",), ("Analista",), ("Operacional",)]
         cursor.executemany("INSERT INTO cargos_custom (nome_cargo) VALUES (%s)", cargos)
+        
     conexao.commit()
     cursor.close()
     conexao.close()
