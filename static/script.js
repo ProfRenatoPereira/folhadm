@@ -1,92 +1,81 @@
-let funcionarios = [];
-
-function formatarMoeda(valor) {
-    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-    await carregarCargosBanco();
-    await carregarDadosBanco();
+function actualizarDashboard() {
+    const elMes = document.getElementById('mes_referencia');
+    const elAno = document.getElementById('ano_referencia');
+    const mesSelecionado = elMes ? elMes.value.trim() : '';
+    const anoSelecionado = elAno ? elAno.value.trim() : '';
     
-    // Vinculação cirúrgica dos botões operacionais da tela
-    document.getElementById('btn_add_cargo')?.addEventListener('click', adicionarCargoNovo);
-    document.getElementById('btn_contratar')?.addEventListener('click', adicionarFuncionario);
-    document.getElementById('btn_salvar')?.addEventListener('click', salvarAlteracoesFuncionario);
-    document.getElementById('btn_limpar')?.addEventListener('click', limparCamposTela);
-    document.getElementById('btn_balanco')?.addEventListener('click', imprimirBalanco);
-    document.getElementById('btn_13')?.addEventListener('click', abrirDecimoTerceiroGeral);
-    document.getElementById('btn_print_list')?.addEventListener('click', () => window.print());
+    const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
+    let totalBruto = 0, totalDescontos = 0, totalLiquido = 0, custoTotalCorporativo = 0;
+    let totalFuncionariosMes = 0;
     
-    // Atualização em tempo real nas mudanças fiscais e temporais
-    document.getElementById('mes_referencia')?.addEventListener('change', actualizarDashboard);
-    document.getElementById('ano_referencia')?.addEventListener('change', actualizarDashboard);
-    document.getElementById('receita_empresa')?.addEventListener('change', actualizarDashboard);
-    document.getElementById('limite_func')?.addEventListener('change', actualizarDashboard);
-    document.getElementById('btn_tema')?.addEventListener('click', alternarTema);
-
-    // Conservação do tema de acessibilidade preferido do usuário
-    if (localStorage.getItem('tema') === 'escuro') {
-        document.body.classList.add('dark-mode');
-        const botao = document.getElementById('btn_tema');
-        if (botao) botao.innerHTML = '☀️ Modo Claro';
-    }
-});
-
-async function carregarCargosBanco() {
-    try {
-        const resposta = await fetch('/api/cargos');
-        if (!resposta.ok) throw new Error();
-        const cargos = await resposta.json();
-        const selectCargo = document.getElementById('cargo');
-        if (selectCargo) {
-            selectCargo.innerHTML = '';
-            cargos.forEach(c => {
-                const cargoNome = Array.isArray(c) ? c : c;
-                const opt = document.createElement('option');
-                opt.value = cargoNome; opt.innerText = cargoNome;
-                selectCargo.appendChild(opt);
-            });
+    funcionarios.forEach(f => {
+        // Normalização das strings para garantir que '7' e '07' coincidam perfeitamente
+        const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
+        const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
+        
+        // Aplica o filtro de competência de mês e ano antes de somar as métricas
+        if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
+            totalFuncionariosMes++;
+            totalBruto += f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0);
+            totalDescontos += (f.total_descontos || 0);
+            totalLiquido += (f.liquido || 0);
+            custoTotalCorporativo += f.salario + (f.beneficios || 0) + (f.total_he_ganho || 0) + (f.adicional_noturno || 0);
         }
-    } catch (error) {
-        const selectCargo = document.getElementById('cargo');
-        if (selectCargo && selectCargo.children.length === 0) {
-            const padroes = ["Diretoria", "Gerência", "Analista", "Operacional"];
-            selectCargo.innerHTML = '';
-            padroes.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.innerText = c;
-                selectCargo.appendChild(opt);
-            });
+    });
+
+    let saldoFinal = receita - custoTotalCorporativo;
+    const elTotal = document.getElementById('dash_total_func');
+    const elLim = document.getElementById('limite_func');
+    if (elTotal && elLim) elTotal.innerText = totalFuncionariosMes + ' / ' + elLim.value;
+    
+    if (document.getElementById('dash_custo_bruto')) document.getElementById('dash_custo_bruto').innerText = formatarMoeda(totalBruto);
+    if (document.getElementById('dash_total_descontos')) document.getElementById('dash_total_descontos').innerText = formatarMoeda(totalDescontos);
+    if (document.getElementById('dash_folha_liquida')) document.getElementById('dash_folha_liquida').innerText = formatarMoeda(totalLiquido);
+    if (document.getElementById('dash_saldo_empresa')) document.getElementById('dash_saldo_empresa').innerText = formatarMoeda(saldoFinal);
+    if (document.getElementById('card_balanco')) document.getElementById('card_balanco').className = saldoFinal < 0 ? 'metric negative' : 'metric';
+    
+    renderizarGraficosNativos(totalLiquido, totalDescontos);
+}
+
+function renderizarTabela() {
+    const corpo = document.getElementById('tabela_corpo');
+    if (!corpo) return;
+    corpo.innerHTML = '';
+    
+    const elMes = document.getElementById('mes_referencia');
+    const elAno = document.getElementById('ano_referencia');
+    const mesSelecionado = elMes ? elMes.value.trim() : '';
+    const anoSelecionado = elAno ? elAno.value.trim() : '';
+    
+    funcionarios.forEach(f => {
+        const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
+        const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
+        
+        // Renderiza apenas os colaboradores que pertencem ao mês e ano selecionados
+        if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
+            const dataFormatada = f.data_admissao ? f.data_admissao.split('-').reverse().join('/') : '---';
+            const turnoRotulo = f.turno === 'noturno' ? '🌙 Noturno' : '☀️ Diurno';
+            const jTexto = f.banco_horas > 0 ? f.horas_comp + 'h (+' + f.banco_horas + 'h BH)' : f.horas_comp + 'h';
+            const deptoRotulo = f.departamento ? f.departamento : 'Administrativo';
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><a id="lnk_${f.id}" style="cursor:pointer; color:var(--primary); text-decoration:underline;"><strong>${f.nome}</strong></a><br><small>Admissão: ${dataFormatada}</small></td>
+            <td>${f.cargo}<br><small style="color:#64748b">Dep: ${deptoRotulo}</small></td>
+            <td><small>Jornada: ${jTexto}</small><br><strong>${turnoRotulo}</strong></td>
+            <td style="color:#16a34a"><strong>${formatarMoeda(f.liquido)}</strong></td>
+            <td class="actions-cell" style="display: flex; gap: 4px; align-items: center; justify-content: flex-start; wrap: nowrap;">
+                <a onclick="abrirContracheque(${f.id})" class="btn-link" title="Holerite Mensal">📄 Mês</a>
+                <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a" title="Recibo de Férias">🌴 Férias</a>
+                <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7" title="13º Individual">🎄 13º</a>
+                <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
+                <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
+                <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
+            </td>`;
+            corpo.appendChild(tr);
+            document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
         }
-    }
+    });
 }
-async function carregarDadosBanco() {
-    try {
-        const resposta = await fetch('/api/funcionarios');
-        if (!resposta.ok) throw new Error();
-        funcionarios = await resposta.json();
-    } catch (error) {
-        console.warn("API de funcionários offline. Rodando local.");
-    }
-    renderizarTabela();
-    actualizarDashboard();
-}
-
-async function adicionarCargoNovo() {
-    const inputCargo = document.getElementById('novo_cargo_input');
-    const nomeCargo = inputCargo ? inputCargo.value.trim() : '';
-    if (!nomeCargo) { alert('Digite o nome do novo cargo.'); return; }
-    try {
-        await fetch('/api/cargos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome_cargo: nomeCargo })
-        });
-    } catch(e) { console.error("Erro ao salvar cargo na API"); }
-    if (inputCargo) inputCargo.value = '';
-    await carregarCargosBanco();
-}
-
 async function adicionarFuncionario() {
     const pegarValor = (id) => {
         const el = document.getElementById(id);
@@ -96,7 +85,7 @@ async function adicionarFuncionario() {
     const nome = pegarValor('nome').trim();
     if (!nome) { alert('Insira o nome do profissional.'); return; }
     
-       const dados = {
+    const dados = {
         id: pegarValor('func_id_edicao'),
         nome: nome,
         cargo: pegarValor('cargo'),
@@ -186,7 +175,6 @@ async function salvarAlteracoesFuncionario() {
     }
     await adicionarFuncionario(); 
 }
-
 function actualizarDashboard() {
     const elMes = document.getElementById('mes_referencia');
     const elAno = document.getElementById('ano_referencia');
@@ -198,11 +186,9 @@ function actualizarDashboard() {
     let totalFuncionariosMes = 0;
     
     funcionarios.forEach(f => {
-        // Normalização das strings para garantir que '7' e '07' coincidam perfeitamente
         const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
         const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
         
-        // Aplica o filtro de competência de mês e ano antes de somar as métricas
         if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
             totalFuncionariosMes++;
             totalBruto += f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0);
@@ -226,6 +212,36 @@ function actualizarDashboard() {
     renderizarGraficosNativos(totalLiquido, totalDescontos);
 }
 
+function renderizarGraficosNativos(liquido, descontos) {
+    const total = liquido + descontos;
+    const pizza = document.getElementById('nativePizza');
+    if (pizza) {
+        const perc = total > 0 ? ((descontos / total) * 100).toFixed(1) : 0;
+        pizza.style.background = `conic-gradient(#dc2626 0% ${perc}%, #16a34a ${perc}% 100%)`;
+    }
+    const custosCargo = {};
+    funcionarios.forEach(f => custosCargo[f.cargo] = (custosCargo[f.cargo] || 0) + f.salario);
+    const cargos = Object.keys(custosCargo).sort((a,b) => custosCargo[b] - custosCargo[a]);
+    const maxCusto = cargos.length > 0 ? custosCargo[cargos[0]] : 1;
+    const containerPareto = document.getElementById('nativePareto');
+    if (containerPareto) {
+        containerPareto.innerHTML = '';
+        cargos.slice(0, 4).forEach(c => {
+            const pct = maxCusto > 0 ? (custosCargo[c] / maxCusto) * 100 : 0;
+            containerPareto.innerHTML += `<div class="bar-wrapper"><div class="bar-native" style="height: ${pct}%">${pct.toFixed(0)}%</div><div class="bar-label">${c}</div></div>`;
+        });
+    }
+    const containerLinear = document.getElementById('nativeLinear');
+    if (containerLinear) {
+        containerLinear.innerHTML = '';
+        const maxBruto = funcionarios.length > 0 ? Math.max(...funcionarios.map(f => f.salario)) : 1;
+        funcionarios.slice(-4).forEach(f => {
+            const pct = maxBruto > 0 ? (f.salario / maxBruto) * 100 : 0;
+            containerLinear.innerHTML += `<div class="linear-row"><div class="linear-name">${f.nome}</div><div class="linear-bar-bg"><div class="linear-bar-fill" style="width: ${pct}%"></div></div><div class="linear-value" style="color:#1e3a8a">${formatarMoeda(f.salario)}</div></div>`;
+        });
+    }
+}
+
 function renderizarTabela() {
     const corpo = document.getElementById('tabela_corpo');
     if (!corpo) return;
@@ -240,7 +256,6 @@ function renderizarTabela() {
         const fMes = f.mes_ref ? String(f.mes_ref).trim() : '';
         const fAno = f.ano_ref ? String(f.ano_ref).trim() : '';
         
-        // Renderiza apenas os colaboradores que pertencem ao mês e ano selecionados
         if ((fMes === mesSelecionado || parseInt(fMes) === parseInt(mesSelecionado)) && fAno === anoSelecionado) {
             const dataFormatada = f.data_admissao ? f.data_admissao.split('-').reverse().join('/') : '---';
             const turnoRotulo = f.turno === 'noturno' ? '🌙 Noturno' : '☀️ Diurno';
@@ -265,7 +280,6 @@ function renderizarTabela() {
         }
     });
 }
-
 function imprimirBalanco() {
     const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
     let totalBruto = 0; funcionarios.forEach(f => { totalBruto += (f.salario + (f.total_he_ganho || 0)); });
@@ -284,76 +298,6 @@ function dispararRescisaoImediata(id, tipo) {
     if (confirm(msg + f.nome + "?")) { emitirRescisaoExecutiva(f, tipo); }
 }
 
-function abrirContracheque(id) {
-    const f = funcionarios.find(emp => emp.id === id);
-    if (!f) return;
-    const proventos = f.salario + (f.total_he_ganho || 0) + (f.insalubridade || 0) + (f.adicional_noturno || 0) + (f.beneficios || 0) + (f.salario_familia || 0);
-    const saude = f.plano_saude || 0; const odonto = f.plano_odontologico || 0; const sind = f.sindicato || 0; const farmacia = f.vale_farmacia || 0;
-    const vrDesconto = f.vale_refeicao || 0; const vmDesconto = f.vale_mercado || 0;
-    const adiantVal = f.adiantamento_valor || 0; // <- CAPTURA O VALOR DO ADIANTAMENTO SALVO NO BANCO
-    const totalDeducoesAtuais = (f.total_descontos || 0);
-    const baseFgts = f.salario + (f.total_he_ganho || 0) + (f.adicional_noturno || 0) + (f.insalubridade || 0);
-    const fgtsMes = baseFgts * 0.08;
-    const obsEmpresa = document.getElementById('observacoes')?.value.trim() || f.observacoes || "Nenhuma observação informada.";
-    const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
-
-    let html = "<html><head><title>Holerite Oficial</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
-    html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
-    html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p><p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + "</p></div>";
-    html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Salário Base</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
-    
-    const temHeNova = (f.v_he_25 > 0 || f.v_he_50 > 0 || f.v_he_100 > 0);
-    if (temHeNova) {
-        if (f.v_he_25 > 0) html += "<tr><td>(+) Horas Extras (25%)</td><td class='text-right'>" + formatarMoeda(f.v_he_25) + "</td></tr>";
-        if (f.v_he_50 > 0) html += "<tr><td>(+) Horas Extras (50%)</td><td class='text-right'>" + formatarMoeda(f.v_he_50) + "</td></tr>";
-        if (f.v_he_100 > 0) html += "<tr><td>(+) Horas Extras (100%)</td><td class='text-right'>" + formatarMoeda(f.v_he_100) + "</td></tr>";
-    } else if (f.total_he_ganho > 0) {
-        html += "<tr><td>(+) Horas Extras Acumuladas</td><td class='text-right'>" + formatarMoeda(f.total_he_ganho) + "</td></tr>";
-    }
-    
-    if (f.insalubridade > 0) html += "<tr><td>(+) Adicional Insalubridade</td><td class='text-right'>" + formatarMoeda(f.insalubridade) + "</td></tr>";
-    if (f.adicional_noturno > 0) html += "<tr><td>(+) Adicional Noturno</td><td class='text-right'>" + formatarMoeda(f.adicional_noturno) + "</td></tr>";
-    if (f.beneficios > 0) html += "<tr><td>(+) Auxílios/Benefícios</td><td class='text-right'>" + formatarMoeda(f.beneficios) + "</td></tr>";
-    html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
-    html += "<h4 class='section-title descontos-title'>DESCONTOS (RETENÇÕES)</h4><table class='table-holerite'>";
-    if (f.inss > 0) html += "<tr><td>(-) INSS Progressivo</td><td class='text-right'>" + formatarMoeda(f.inss) + "</td></tr>";
-    if (f.irrf > 0) html += "<tr><td>(-) Imposto de Renda (IRRF)</td><td class='text-right'>" + formatarMoeda(f.irrf) + "</td></tr>";
-    if (f.vt > 0) html += "<tr><td>(-) Vale Transporte (6%)</td><td class='text-right'>" + formatarMoeda(f.vt) + "</td></tr>";
-    if (saude > 0) html += "<tr><td>(-) Plano de Saúde</td><td class='text-right'>" + formatarMoeda(saude) + "</td></tr>";
-    if (odonto > 0) html += "<tr><td>(-) Plano Odontológico</td><td class='text-right'>" + formatarMoeda(odonto) + "</td></tr>";
-    if (sind > 0) html += "<tr><td>(-) Contribuição Sindical</td><td class='text-right'>" + formatarMoeda(sind) + "</td></tr>";
-    if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
-    if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
-    if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
-    if (adiantVal > 0) html += "<tr><td>(-) Adiantamento Quinzenal</td><td class='text-right'>" + formatarMoeda(adiantVal) + "</td></tr>"; // <- INJEÇÃO DA LINHA DO ADIANTAMENTO
-    html += "<tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDeducoesAtuais) + "</td></tr></table>";
-    html += "<div class='liquido-box'><span class='liquido-label'>VALOR LÍQUIDO A RECEBER:</span><span class='liquido-value'>" + formatarMoeda(proventos - totalDeducoesAtuais) + "</span></div>";
-    html += "<div style='margin-top:20px; font-size:0.85rem; border:1px solid #000; padding:10px; background:#fafafa;'><strong>FGTS recolhido no mês (Informativo):</strong> " + formatarMoeda(fgtsMes) + "<br><br><strong>Observações de Aula/Empresa:</strong><br><span style='font-style:italic; color:#334155;'>" + obsEmpresa + "</span></div>";
-    html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
-    janela.document.write(html); janela.document.close();
-}
-
-}
-function abrirFerias(id) {
-    const f = funcionarios.find(emp => emp.id === id);
-    if (!f) return;
-    const mediaHorasExtras = f.total_he_ganho || 0;
-    const base = f.salario + (f.insalubridade || 0) + mediaHorasExtras;
-    const terco = base / 3; const totalBruto = base + terco; const totalDescontos = totalBruto * 0.09;
-    const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
-    
-    let html = "<html><head><title>Recibo de Férias</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
-    html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
-    html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE AVISO E GOZO DE FÉRIAS</h2><hr>";
-    html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p></div>";
-    html += "<h4 class='section-title proventos-title'>VERBAS REFEITAS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Valor Base das Férias (Salário + Média H.E.)</td><td class='text-right'>" + formatarMoeda(base) + "</td></tr><tr><td>(+) Terço Constitucional de Férias (1/3)</td><td class='text-right'>" + formatarMoeda(terco) + "</td></tr><tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(totalBruto) + "</td></tr></table>";
-    html += "<h4 class='section-title descontos-title'>DEDUÇÕES LEGAIS</h4><table class='table-holerite'><tr><td>(-) Retenções Previdenciárias/Fiscais</td><td class='text-right'>" + formatarMoeda(totalDescontos) + "</td></tr><tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDescontos) + "</td></tr></table>";
-    html += "<div class='liquido-box'><span class='liquido-label'>VALOR LÍQUIDO DAS FÉRIAS:</span><span class='liquido-value'>" + formatarMoeda(totalBruto - totalDescontos) + "</span></div>";
-    html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
-    janela.document.write(html); janela.document.close();
-}
-
 function calcularDecimoTerceiroIndividual(id) {
     fetch(`/api/decimo_individual/${id}`)
         .then(res => res.json())
@@ -370,6 +314,7 @@ function calcularDecimoTerceiroIndividual(id) {
             janela.document.write(html); janela.document.close();
         }).catch(err => console.error(err));
 }
+
 async function emitirRescisaoExecutiva(f, tipo) {
     let liq = f.salario * 1.4; let proventos = f.salario * 1.5; let descontos = f.salario * 0.1;
     try {
@@ -404,7 +349,6 @@ async function deletarFuncionario(id) {
     try { await fetch(`/api/funcionarios/${id}`, { method: 'DELETE' }); } catch(e) {}
     await carregarDadosBanco();
 }
-
 function obterEstiloHolerite() {
     return `body { font-family: Arial, sans-serif; padding: 20px; background: #fff; color: #000; } .holerite-box { border: 2px solid #000; padding: 20px; max-width: 750px; margin: 0 auto; background: #fff; } .header-holerite { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 15px; } hr { border: 0; border-top: 1px solid #000; margin: 10px 0; } .info-colaborador p { margin: 5px 0; font-size: 0.9rem; } .section-title { font-size: 0.95rem; margin: 20px 0 5px 0; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; } .proventos-title { color: #1e3a8a; } .descontos-title { color: #dc2626; } .table-holerite { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 15px; } .table-holerite td { padding: 5px; border-bottom: 1px solid #eee; } .text-right { text-align: right; font-weight: bold; } .row-total td { font-weight: bold; border-top: 2px solid #000; padding-top: 8px; border-bottom: none; } .liquido-box { border: 2px solid #000; padding: 12px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; margin-top: 20px; font-weight: bold; font-size: 1rem; } .liquido-value { font-size: 1.15rem; color: #16a34a; } .assinatura-container { margin-top: 40px; display: flex; justify-content: space-between; font-size: 0.85rem; } .linha-assinatura { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 5px; margin-top: 30px; }`;
 }
