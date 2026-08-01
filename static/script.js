@@ -282,6 +282,7 @@ function dispararRescisaoImediata(id, tipo) {
     const msg = tipo === 'demissao_sem_justa' ? 'Calcular DISPENSA SEM JUSTA CAUSA de ' : 'Calcular PEDIDO DE DEMISSÃO de ';
     if (confirm(msg + f.nome + "?")) { emitirRescisaoExecutiva(f, tipo); }
 }
+
 function abrirContracheque(id) {
     const f = funcionarios.find(emp => emp.id === id);
     if (!f) return;
@@ -298,7 +299,12 @@ function abrirContracheque(id) {
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
     html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p><p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + "</p></div>";
     html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Salário Base</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
-    if (f.total_he_ganho > 0) html += "<tr><td>(+) Horas Extras Acumuladas</td><td class='text-right'>" + formatarMoeda(f.total_he_ganho) + "</td></tr>";
+    
+    // Discriminação cirúrgica das horas extras separadas por alíquota na impressão
+    if (f.v_he_25 > 0) html += "<tr><td>(+) Horas Extras (25%)</td><td class='text-right'>" + formatarMoeda(f.v_he_25) + "</td></tr>";
+    if (f.v_he_50 > 0) html += "<tr><td>(+) Horas Extras (50%)</td><td class='text-right'>" + formatarMoeda(f.v_he_50) + "</td></tr>";
+    if (f.v_he_100 > 0) html += "<tr><td>(+) Horas Extras (100%)</td><td class='text-right'>" + formatarMoeda(f.v_he_100) + "</td></tr>";
+    
     if (f.insalubridade > 0) html += "<tr><td>(+) Adicional Insalubridade</td><td class='text-right'>" + formatarMoeda(f.insalubridade) + "</td></tr>";
     if (f.adicional_noturno > 0) html += "<tr><td>(+) Adicional Noturno</td><td class='text-right'>" + formatarMoeda(f.adicional_noturno) + "</td></tr>";
     if (f.beneficios > 0) html += "<tr><td>(+) Auxílios/Benefícios</td><td class='text-right'>" + formatarMoeda(f.beneficios) + "</td></tr>";
