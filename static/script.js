@@ -512,7 +512,8 @@ function gerarCalendarioPontoAutomatizado() {
     }
 }
 
-function ejecutarCalculoPontoMensal() {
+// CORREÇÃO: Nome alterado cirurgicamente de "ejecutar" para "executar" para alinhar com o HTML
+function executarCalculoPontoMensal() {
     const linhasTabela = document.querySelectorAll("#corpo_ponto_mensal tr");
     if (linhasTabela.length === 0) { alert("Gere ou selecione um mês válido primeiro."); return; }
     let acumuladoExtras50 = 0; let acumuladoExtras100 = 0;
@@ -532,7 +533,7 @@ function ejecutarCalculoPontoMensal() {
     const inputHeSabado = document.getElementById("he_sabado"); const inputHeDomingo = document.getElementById("he_domingo");
     if (inputHeSabado) inputHeSabado.value = acumuladoExtras50.toFixed(2); if (inputHeDomingo) inputHeDomingo.value = acumuladoExtras100.toFixed(2);
     if (typeof actualizarDashboard === "function") { actualizarDashboard(); }
-    alert(`Ponto Computado com Sucesso!\n\nHoras Extras 50%: ${acumuladoExtras50.toFixed(2)}h\nHoras Extras 100%: ${acumuladoExtras100.toFixed(2)}h\n\nOs painéis gráficos e inputs foram updated.`);
+    alert(`Ponto Computado com Sucesso!\n\nHoras Extras 50%: ${acumuladoExtras50.toFixed(2)}h\nHoras Extras 100%: ${acumuladoExtras100.toFixed(2)}h\n\nOs painéis gráficos e inputs foram atualizados.`);
 }
 
 function carregarHistoricoDoColaborador() {
