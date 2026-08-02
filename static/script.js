@@ -314,21 +314,19 @@ function abrirContracheque(id) {
     html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
     
-    // Alteração no Cabeçalho: Adicionado os valores das horas junto ao mês de referência de forma explícita
+    // Ajuste de espaçamento (margin-left aumentado para distanciamento visual ideal)
     html += "<div class='info-colaborador'>";
     html += "<p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p>";
     html += "<p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + " ";
-    html += "<span style='margin-left: 10px; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #1e3a8a; border: 1px solid #cbd5e1;'>";
+    html += "<span style='margin-left: 20px; background-color: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #1e3a8a; border: 1px solid #cbd5e1;'>";
     html += "<strong>Valores/Hora:</strong> Normal=" + formatarMoeda(valorHoraNormal) + ", Extras 50%=" + formatarMoeda(valorHora50) + ", Extras 100%=" + formatarMoeda(valorHora100);
     html += "</span></p>";
     html += "</div>";
     
-    // Alteração no Corpo dos Proventos: Criação da tabela de 3 colunas discriminando a quantidade de horas
     html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4>";
     html += "<table class='table-holerite' style='width:100%; border-collapse:collapse;'>";
     html += "<tr style='border-bottom: 1px solid #000; font-weight:bold;'><td>Descrição</td><td style='text-align:center; width:25%;'>Referência / Qtde</td><td class='text-right' style='width:25%;'>Valor</td></tr>";
     
-    // Linha do Salário Base detalhando a jornada contratual
     html += "<tr><td>(+) Salário Base</td><td style='text-align:center;'>" + horasCompFunc.toFixed(2) + " hrs</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
     
     const temHeNova = (f.v_he_25 > 0 || f.v_he_50 > 0 || f.v_he_100 > 0);
@@ -355,7 +353,7 @@ function abrirContracheque(id) {
     
     html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
     
-    // Tabela de Descontos preservada na íntegra
+    // Removidas as linhas duplicadas da tabela de descontos para exibição correta
     html += "<h4 class='section-title descontos-title'>DESCONTOS (RETENÇÕES)</h4><table class='table-holerite'>";
     if (f.inss > 0) html += "<tr><td>(-) INSS Progressivo</td><td class='text-right'>" + formatarMoeda(f.inss) + "</td></tr>";
     if (f.irrf > 0) html += "<tr><td>(-) Imposto de Renda (IRRF)</td><td class='text-right'>" + formatarMoeda(f.irrf) + "</td></tr>";
@@ -366,11 +364,7 @@ function abrirContracheque(id) {
     if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
     if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
     if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
-    if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
-    if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
-    if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
     
-    // Injeção limpa da linha de adiantamento quinzenal na tabela de retenções
     if (adiantVal > 0) html += "<tr><td>(-) Adiantamento Quinzenal</td><td class='text-right'>" + formatarMoeda(adiantVal) + "</td></tr>";
     
     html += "<tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDeducoesAtuais) + "</td></tr></table>";
