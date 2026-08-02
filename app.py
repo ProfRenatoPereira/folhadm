@@ -33,6 +33,7 @@ def iniciar_banco():
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_50 REAL DEFAULT 0;")
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS v_he_100 REAL DEFAULT 0;")
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS vale_refeicao REAL DEFAULT 0;")
+        cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS vale_market REAL DEFAULT 0;")
         cursor.execute("ALTER TABLE funcionarios ADD COLUMN IF NOT EXISTS vale_mercado REAL DEFAULT 0;")
     except psycopg2.Error:
         pass
@@ -45,7 +46,6 @@ def iniciar_banco():
     conexao.commit()
     cursor.close()
     conexao.close()
-
 def calcular_inss(salario_contribuicao):
     if salario_contribuicao <= 1412: return salario_contribuicao * 0.075
     if salario_contribuicao <= 2666.68: return (salario_contribuicao * 0.09) - 21.18
