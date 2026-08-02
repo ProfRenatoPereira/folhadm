@@ -68,6 +68,19 @@ async function carregarDadosBanco() {
     } catch (error) {
         console.warn("API de funcionários offline. Rodando local.");
     }
+    
+    // Alimenta dinamicamente o select de funcionários criado na área de ponto
+    const selectPontoFunc = document.getElementById('ponto_selecao_funcionario');
+    if (selectPontoFunc) {
+        selectPontoFunc.innerHTML = '<option value="">-- Escolha um Profissional --</option>';
+        funcionarios.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.innerText = f.nome;
+            selectPontoFunc.appendChild(opt);
+        });
+    }
+
     renderizarTabela();
     actualizarDashboard();
 }
@@ -86,6 +99,7 @@ async function adicionarCargoNovo() {
     if (inputCargo) inputCargo.value = '';
     await carregarCargosBanco();
 }
+
 async function adicionarFuncionario() {
     const pegarValor = (id) => {
         const el = document.getElementById(id);
@@ -95,7 +109,7 @@ async function adicionarFuncionario() {
     const nome = pegarValor('nome').trim();
     if (!nome) { alert('Insira o nome do profissional.'); return; }
     
-       const dados = {
+    const dados = {
         id: pegarValor('func_id_edicao'),
         nome: nome,
         cargo: pegarValor('cargo'),
@@ -139,7 +153,6 @@ async function adicionarFuncionario() {
         }
     } catch(e) { console.error("Erro ao enviar funcionário para API"); }
 }
-
 function limparCamposTela() {
     const padroes = {
         'func_id_edicao': '', 'nome': '', 'salario': '3500', 'horas_comp': '220',
@@ -185,6 +198,7 @@ async function salvarAlteracoesFuncionario() {
     }
     await adicionarFuncionario(); 
 }
+
 function actualizarDashboard() {
     const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
     let totalBruto = 0, totalDescontos = 0, totalLiquido = 0, custoTotalCorporativo = 0;
@@ -209,7 +223,6 @@ function actualizarDashboard() {
     
     renderizarGraficosNativos(totalLiquido, totalDescontos);
 }
-
 function renderizarGraficosNativos(liquido, descontos) {
     const total = liquido + descontos;
     const pizza = document.getElementById('nativePizza');
@@ -274,16 +287,13 @@ function abrirContracheque(id) {
     const saude = f.plano_saude || 0; const odonto = f.plano_odontologico || 0; const sind = f.sindicato || 0; const farmacia = f.vale_farmacia || 0;
     const vrDesconto = f.vale_refeicao || 0; const vmDesconto = f.vale_mercado || 0;
     
-    // Força a leitura do adiantamento quinzenal em duas chaves operacionais
     const adiantVal = parseFloat(f.adiantamento_valor || f.adiantamento || 0);
-    
     const totalDeducoesAtuais = (f.total_descontos || 0);
     const baseFgts = f.salario + (f.total_he_ganho || 0) + (f.adicional_noturno || 0) + (f.insalubridade || 0);
     const fgtsMes = baseFgts * 0.08;
     const obsEmpresa = document.getElementById('observacoes')?.value.trim() || f.observacoes || "Nenhuma observação informada.";
     const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
 
-    // Lógica para obter de forma didática os valores de cada hora com base no salário do funcionário
     const horasCompFunc = f.horas_comp || 220;
     const valorHoraNormal = f.salario / horasCompFunc;
     const valorHora25 = valorHoraNormal * 1.25;
@@ -294,7 +304,6 @@ function abrirContracheque(id) {
     html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
     
-    // Ajuste de espaçamento (margin-left aumentado para distanciamento visual ideal)
     html += "<div class='info-colaborador'>";
     html += "<p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p>";
     html += "<p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + " ";
@@ -333,7 +342,6 @@ function abrirContracheque(id) {
     
     html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
     
-    // CORREÇÃO CIRÚRGICA DA IMAGEM: Removido o bloco repetido de vales para limpar as retenções
     html += "<h4 class='section-title descontos-title'>DESCONTOS (RETENÇÕES)</h4><table class='table-holerite'>";
     if (f.inss > 0) html += "<tr><td>(-) INSS Progressivo</td><td class='text-right'>" + formatarMoeda(f.inss) + "</td></tr>";
     if (f.irrf > 0) html += "<tr><td>(-) Imposto de Renda (IRRF)</td><td class='text-right'>" + formatarMoeda(f.irrf) + "</td></tr>";
@@ -344,11 +352,9 @@ function abrirContracheque(id) {
     if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
     if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
     if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
-    
     if (adiantVal > 0) html += "<tr><td>(-) Adiantamento Quinzenal</td><td class='text-right'>" + formatarMoeda(adiantVal) + "</td></tr>";
     
     html += "<tr class='row-total'><td>TOTAL DESCONTOS:</td><td class='text-right'>" + formatarMoeda(totalDeducoesAtuais) + "</td></tr></table>";
-
     html += "<div class='liquido-box'><span class='liquido-label'>VALOR LÍQUIDO A RECEBER:</span><span class='liquido-value'>" + formatarMoeda(proventos - totalDeducoesAtuais) + "</span></div>";
     html += "<div style='margin-top:20px; font-size:0.85rem; border:1px solid #000; padding:10px; background:#fafafa;'><strong>FGTS recolhido no mês (Informativo):</strong> " + formatarMoeda(fgtsMes) + "<br><br><strong>Observações de Aula/Empresa:</strong><br><span style='font-style:italic; color:#334155;'>" + obsEmpresa + "</span></div>";
     html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
@@ -512,21 +518,44 @@ function ejecutarCalculoPontoMensal() {
     let acumuladoExtras50 = 0; let acumuladoExtras100 = 0;
     linhasTabela.forEach(linha => {
         const diaSemanaNum = parseInt(linha.getAttribute("data-dia-semana-num"), 10);
-        const stringEntrada = line.querySelector(".ponto-entrada-valor").value; const stringSaida = linha.querySelector(".ponto-saida-valor").value;
+        const stringEntrada = linha.querySelector(".ponto-entrada-valor").value; const stringSaida = linha.querySelector(".ponto-saida-valor").value;
         if (!stringEntrada || !stringSaida) return;
         const [horaEnt, minEnt] = stringEntrada.split(":").map(Number); const [horaSai, minSai] = stringSaida.split(":").map(Number);
         let minutosEntradaTotal = horaEnt * 60 + minEnt; let minutosSaidaTotal = horaSai * 60 + minSai;
         if (minutosSaidaTotal < minutosEntradaTotal) { minutosSaidaTotal += 24 * 60; }
-        let minutosTrabalhadosNoDia = minutosSaidaTotal - minutosEntradaTotal;
-        if (minutosTrabalhadosNoDia > 360) { minutosTrabalhadosNoDia -= 60; }
-        const horasTrabalhadasNoDia = minutosTrabalhadosNoDia / 60; const limiteJornadaDiaria = 8;
+        let minutesTrabalhadosNoDia = minutosSaidaTotal - minutosEntradaTotal;
+        if (minutesTrabalhadosNoDia > 360) { minutesTrabalhadosNoDia -= 60; }
+        const horasTrabalhadasNoDia = minutesTrabalhadosNoDia / 60; const limiteJornadaDiaria = 8;
         if (diaSemanaNum === 0 || diaSemanaNum === 6) { if (stringSaida !== "08:00") { acumuladoExtras100 += horasTrabalhadasNoDia; } } 
         else { if (horasTrabalhadasNoDia > limiteJornadaDiaria) { const saldoExtraDoDia = horasTrabalhadasNoDia - limiteJornadaDiaria; if (saldoExtraDoDia <= 2) { acumuladoExtras50 += saldoExtraDoDia; } else { acumuladoExtras50 += 2; acumuladoExtras100 += (saldoExtraDoDia - 2); } } }
     });
     const inputHeSabado = document.getElementById("he_sabado"); const inputHeDomingo = document.getElementById("he_domingo");
     if (inputHeSabado) inputHeSabado.value = acumuladoExtras50.toFixed(2); if (inputHeDomingo) inputHeDomingo.value = acumuladoExtras100.toFixed(2);
     if (typeof actualizarDashboard === "function") { actualizarDashboard(); }
-    alert(`Ponto Computado com Sucesso!\n\nHoras Extras 50%: ${acumuladoExtras50.toFixed(2)}h\nHoras Extras 100%: ${acumuladoExtras100.toFixed(2)}h\n\nOs painéis gráficos e inputs foram atualizados.`);
+    alert(`Ponto Computado com Sucesso!\n\nHoras Extras 50%: ${acumuladoExtras50.toFixed(2)}h\nHoras Extras 100%: ${acumuladoExtras100.toFixed(2)}h\n\nOs painéis gráficos e inputs foram updated.`);
+}
+
+function carregarHistoricoDoColaborador() {
+    const idSelecionado = document.getElementById("ponto_selecao_funcionario")?.value;
+    const blocoVazio = document.getElementById("ponto_historico_vazio");
+    const blocoConteudo = document.getElementById("ponto_historico_conteudo");
+    if (!idSelecionado) { if (blocoVazio) blocoVazio.style.display = "block"; if (blocoConteudo) blocoConteudo.style.display = "none"; return; }
+    const f = funcionarios.find(emp => emp.id == idSelecionado);
+    if (!f) return;
+    if (blocoVazio) blocoVazio.style.display = "none";
+    if (blocoConteudo) {
+        blocoConteudo.style.display = "block";
+        blocoConteudo.innerHTML = `
+            <p style='margin: 4px 0;'><strong>Salário Contratual:</strong> ${formatarMoeda(f.salario)}</p>
+            <p style='margin: 4px 0;'><strong>Departamento Fixo:</strong> ${f.departamento || 'Administrativo'}</p>
+            <p style='margin: 4px 0;'><strong>Média Acumulada de H.E. (Estudos):</strong> ${formatarMoeda(f.total_he_ganho || 0)}</p>
+            <p style='margin: 4px 0;'><strong>Insalubridade Vinculada:</strong> ${formatarMoeda(f.insalubridade || 0)}</p>
+            <p style='margin: 4px 0;'><strong>Último Líquido Gerado:</strong> <span style='color:#16a34a; font-weight:bold;'>${formatarMoeda(f.liquido || 0)}</span></p>
+            <hr style='border-top:1px solid #cbd5e1; margin:8px 0;'>
+            <button type='button' class='btn-link' onclick='abrirContracheque(${f.id})' style='width:100%; text-align:center; display:block; margin-bottom:5px; background:#1e3a8a; color:white; border-radius:4px; padding:6px; cursor:pointer;'>📄 Reemitir Holerite Salvo</button>
+            <button type='button' class='btn-link' onclick='abrirFerias(${f.id})' style='width:100%; text-align:center; display:block; background:#16a34a; color:white; border-radius:4px; padding:6px; cursor:pointer;'>🌴 Auditar Projeção de Férias</button>
+        `;
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => { gerarCalendarioPontoAutomatizado(); });
