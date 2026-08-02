@@ -264,17 +264,17 @@ function renderizarTabela() {
         const deptoRotulo = f.departamento ? f.departamento : 'Administrativo';
         
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><a id="lnk_${f.id}" style="cursor:pointer; color:var(--primary); text-decoration:underline;"><strong>${f.nome}</strong></a><br><small>Admissão: ${dataFormatada}</small></td>
+        tr.innerHTML = `<td><a id="lnk_${f.id}" href="javascript:void(0)" style="color:var(--primary); text-decoration:underline;"><strong>${f.nome}</strong></a><br><small>Admissão: ${dataFormatada}</small></td>
         <td>${f.cargo}<br><small style="color:#64748b">Dep: ${deptoRotulo}</small></td>
         <td><small>Jornada: ${jTexto}</small><br><strong>${turnoRotulo}</strong></td>
         <td style="color:#16a34a"><strong>${formatarMoeda(f.liquido)}</strong></td>
-        <td class="actions-cell" style="display: flex; gap: 4px; align-items: center; justify-content: flex-start; wrap: nowrap;">
-            <a onclick="abrirContracheque(${f.id})" class="btn-link" title="Holerite Mensal">📄 Mês</a>
-            <a onclick="abrirFerias(${f.id})" class="btn-link" style="color:#16a34a" title="Recibo de Férias">🌴 Férias</a>
-            <a onclick="calcularDecimoTerceiroIndividual(${f.id})" class="btn-link" style="color:#0284c7" title="13º Individual">🎄 13º</a>
-            <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
-            <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
-            <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:3px 6px; font-size:0.65rem; border-radius:4px; cursor:pointer;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
+        <td class="actions-cell" style="display: flex; gap: 6px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+            <a onclick="abrirContracheque(${f.id})" href="javascript:void(0)" class="btn-link" style="background: #1e3a8a; color: white;" title="Holerite Mensal">📄 Mês</a>
+            <a onclick="abrirFerias(${f.id})" href="javascript:void(0)" class="btn-link" style="background: #16a34a; color: white;" title="Recibo de Férias">🌴 Férias</a>
+            <a onclick="calcularDecimoTerceiroIndividual(${f.id})" href="javascript:void(0)" class="btn-link" style="background: #0284c7; color: white;" title="13º Individual">🎄 13º</a>
+            <button class="btn-delete" style="background:#dc2626; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px;" onclick="dispararRescisaoImediata(${f.id}, 'demissao_sem_justa')" title="Dispensa">⚠️ Dispensa</button>
+            <button class="btn-delete" style="background:#f97316; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px;" onclick="dispararRescisaoImediata(${f.id}, 'pedido_demissao')" title="Pedido">🚪 Pedido</button>
+            <button class="btn-delete" style="background:#7f1d1d; color:white; border:none; padding:4px 8px; font-size:0.75rem; border-radius:4px;" onclick="deletarFuncionario(${f.id})" title="Demitir Profissional">❌ Demitir</button>
         </td>`;
         corpo.appendChild(tr);
         document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
