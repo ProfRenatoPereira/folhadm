@@ -47,6 +47,9 @@
 
 <!-- Barra Superior de Ferramentas de Acessibilidade Geral -->
 <div id="barra-acessibilidade" style="background: #0f172a; padding: 0.5rem 1rem; display: flex; justify-content: flex-end; gap: 0.8rem; align-items: center; color: #fff; font-size: 0.85rem; font-family: sans-serif; border-bottom: 1px solid #334155;">
+    <div style="display: flex; align-items: center; gap: 1.2rem;">
+            <img src="{{ url_for('static', filename='Logo.svg') }}" alt=" Logo ®ψΣ" style=" height: 65px; width: auto; object-fit: contain;">
+            <div>
     <span>♿ Acessibilidade:</span>
     <button type="button" onclick="mudarFonte(1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A+</button>
     <button type="button" onclick="mudarFonte(-1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A-</button>
@@ -57,7 +60,7 @@
 <div class="container">
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 0.75rem;">
         <div style="display: flex; align-items: center; gap: 1.2rem;">
-            <img src="{{ url_for('static', filename='Logo.svg') }}" alt=" Logo ®ψΣ" style=" height: 65px; width: auto; object-fit: contain;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt=" Logo ®ψΣ" style=" height: 65px; width: auto; object-fit: contain;">
             <div>
                 <h1 style="margin: 0; color: var(--primary); font-size: 1.8rem;">TERCEIRO ADM ASSOCIADOS</h1>
                 <p style="margin: 3px 0 0 0; font-size: 0.9rem; color: #475569;">Gerenciador de Pessoal | Abordagem Pedagógico-Didática de Custos</p>
