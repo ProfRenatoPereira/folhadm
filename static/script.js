@@ -125,7 +125,7 @@ async function adicionarFuncionario() {
         dataAdmissao: pegarValor('data_admissao')
     };
 
-    try {
+   try {
         const resposta = await fetch('/api/calcular', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -303,25 +303,59 @@ function abrirContracheque(id) {
     const obsEmpresa = document.getElementById('observacoes')?.value.trim() || f.observacoes || "Nenhuma observação informada.";
     const janela = window.open('', '_blank', 'width=800,height=900'); if (!janela) return;
 
+    // Lógica para obter de forma didática os valores de cada hora com base no salário do funcionário
+    const horasCompFunc = f.horas_comp || 220;
+    const valorHoraNormal = f.salario / horasCompFunc;
+    const valorHora25 = valorHoraNormal * 1.25;
+    const valorHora50 = valorHoraNormal * 1.50;
+    const valorHora100 = valorHoraNormal * 2.00;
+
     let html = "<html><head><title>Holerite Oficial</title><style>" + obterEstiloHolerite() + "</style></head><body><div class='holerite-box'>";
     html += "<div class='header-holerite'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem;'>📊TERADMAS📈</div><div style='text-align: left;'><h2 style='margin: 0; font-size: 1.3rem; color: #1e3a8a;'>TERCEIRO ADM</h2><h3 style='margin: 2px 0 0 0; font-size: 0.9rem; color: #64748b;'>ASSOCIADOS</h3></div></div>";
     html += "<h2 style='text-align:center; font-size:1.2rem; margin: 15px 0 5px 0;'>RECIBO DE PAGAMENTO MENSAL</h2><hr>";
-    html += "<div class='info-colaborador'><p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p><p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + "</p></div>";
-    html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4><table class='table-holerite'><tr><td>(+) Salário Base</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
+    
+    // Alteração no Cabeçalho: Adicionado os valores das horas junto ao mês de referência de forma explícita
+    html += "<div class='info-colaborador'>";
+    html += "<p><strong>Colaborador:</strong> " + f.nome + " | <strong>Cargo:</strong> " + f.cargo + "</p>";
+    html += "<p><strong>Mês de Referência:</strong> " + (document.getElementById('mes_referencia')?.value || f.mes_ref || '7') + "/" + (document.getElementById('ano_referencia')?.value || '2026') + " ";
+    html += "<span style='margin-left: 10px; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #1e3a8a; border: 1px solid #cbd5e1;'>";
+    html += "<strong>Valores/Hora:</strong> Normal=" + formatarMoeda(valorHoraNormal) + ", Extras 50%=" + formatarMoeda(valorHora50) + ", Extras 100%=" + formatarMoeda(valorHora100);
+    html += "</span></p>";
+    html += "</div>";
+    
+    // Alteração no Corpo dos Proventos: Criação da tabela de 3 colunas discriminando a quantidade de horas
+    html += "<h4 class='section-title proventos-title'>PROVENTOS (CRÉDITOS)</h4>";
+    html += "<table class='table-holerite' style='width:100%; border-collapse:collapse;'>";
+    html += "<tr style='border-bottom: 1px solid #000; font-weight:bold;'><td>Descrição</td><td style='text-align:center; width:25%;'>Referência / Qtde</td><td class='text-right' style='width:25%;'>Valor</td></tr>";
+    
+    // Linha do Salário Base detalhando a jornada contratual
+    html += "<tr><td>(+) Salário Base</td><td style='text-align:center;'>" + horasCompFunc.toFixed(2) + " hrs</td><td class='text-right'>" + formatarMoeda(f.salario) + "</td></tr>";
     
     const temHeNova = (f.v_he_25 > 0 || f.v_he_50 > 0 || f.v_he_100 > 0);
     if (temHeNova) {
-        if (f.v_he_25 > 0) html += "<tr><td>(+) Horas Extras (25%)</td><td class='text-right'>" + formatarMoeda(f.v_he_25) + "</td></tr>";
-        if (f.v_he_50 > 0) html += "<tr><td>(+) Horas Extras (50%)</td><td class='text-right'>" + formatarMoeda(f.v_he_50) + "</td></tr>";
-        if (f.v_he_100 > 0) html += "<tr><td>(+) Horas Extras (100%)</td><td class='text-right'>" + formatarMoeda(f.v_he_100) + "</td></tr>";
+        if (f.v_he_25 > 0) {
+            const qtdeHe25 = f.he_semana || (f.v_he_25 / valorHora25);
+            html += "<tr><td>(+) Horas Extras (25%)</td><td style='text-align:center;'>" + qtdeHe25.toFixed(2) + " hrs</td><td class='text-right'>" + formatarMoeda(f.v_he_25) + "</td></tr>";
+        }
+        if (f.v_he_50 > 0) {
+            const qtdeHe50 = f.he_sabado || (f.v_he_50 / valorHora50);
+            html += "<tr><td>(+) Horas Extras (50%)</td><td style='text-align:center;'>" + qtdeHe50.toFixed(2) + " hrs</td><td class='text-right'>" + formatarMoeda(f.v_he_50) + "</td></tr>";
+        }
+        if (f.v_he_100 > 0) {
+            const qtdeHe100 = f.he_domingo || (f.v_he_100 / valorHora100);
+            html += "<tr><td>(+) Horas Extras (100%)</td><td style='text-align:center;'>" + qtdeHe100.toFixed(2) + " hrs</td><td class='text-right'>" + formatarMoeda(f.v_he_100) + "</td></tr>";
+        }
     } else if (f.total_he_ganho > 0) {
-        html += "<tr><td>(+) Horas Extras Acumuladas</td><td class='text-right'>" + formatarMoeda(f.total_he_ganho) + "</td></tr>";
+        html += "<tr><td>(+) Horas Extras Acumuladas</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(f.total_he_ganho) + "</td></tr>";
     }
     
-    if (f.insalubridade > 0) html += "<tr><td>(+) Adicional Insalubridade</td><td class='text-right'>" + formatarMoeda(f.insalubridade) + "</td></tr>";
-    if (f.adicional_noturno > 0) html += "<tr><td>(+) Adicional Noturno</td><td class='text-right'>" + formatarMoeda(f.adicional_noturno) + "</td></tr>";
-    if (f.beneficios > 0) html += "<tr><td>(+) Auxílios/Benefícios</td><td class='text-right'>" + formatarMoeda(f.beneficios) + "</td></tr>";
-    html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
+    if (f.insalubridade > 0) html += "<tr><td>(+) Adicional Insalubridade</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(f.insalubridade) + "</td></tr>";
+    if (f.adicional_noturno > 0) html += "<tr><td>(+) Adicional Noturno</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(f.adicional_noturno) + "</td></tr>";
+    if (f.beneficios > 0) html += "<tr><td>(+) Auxílios/Benefícios</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(f.beneficios) + "</td></tr>";
+    
+    html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
+    
+    // Tabela de Descontos preservada na íntegra
     html += "<h4 class='section-title descontos-title'>DESCONTOS (RETENÇÕES)</h4><table class='table-holerite'>";
     if (f.inss > 0) html += "<tr><td>(-) INSS Progressivo</td><td class='text-right'>" + formatarMoeda(f.inss) + "</td></tr>";
     if (f.irrf > 0) html += "<tr><td>(-) Imposto de Renda (IRRF)</td><td class='text-right'>" + formatarMoeda(f.irrf) + "</td></tr>";
@@ -332,7 +366,7 @@ function abrirContracheque(id) {
     if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
     if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
     if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
-        if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
+    if (farmacia > 0) html += "<tr><td>(-) Vale Farmácia</td><td class='text-right'>" + formatarMoeda(farmacia) + "</td></tr>";
     if (vrDesconto > 0) html += "<tr><td>(-) Vale Refeição</td><td class='text-right'>" + formatarMoeda(vrDesconto) + "</td></tr>";
     if (vmDesconto > 0) html += "<tr><td>(-) Vale Mercado</td><td class='text-right'>" + formatarMoeda(vmDesconto) + "</td></tr>";
     
@@ -411,7 +445,7 @@ function abrirDecimoTerceiroGeral() {
 }
 
 async function deletarFuncionario(id) {
-    if (!confirm("Tem certeza que deseja remover este registro do sistema?")) return;
+    if (!confirm("Tem certeza que deseja remover este registro do systema?")) return;
     try { await fetch(`/api/funcionarios/${id}`, { method: 'DELETE' }); } catch(e) {}
     await carregarDadosBanco();
 }
