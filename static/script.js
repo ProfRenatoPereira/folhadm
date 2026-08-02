@@ -86,7 +86,6 @@ async function adicionarCargoNovo() {
     if (inputCargo) inputCargo.value = '';
     await carregarCargosBanco();
 }
-
 async function adicionarFuncionario() {
     const pegarValor = (id) => {
         const el = document.getElementById(id);
@@ -125,7 +124,7 @@ async function adicionarFuncionario() {
         dataAdmissao: pegarValor('data_admissao')
     };
 
-   try {
+    try {
         const resposta = await fetch('/api/calcular', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -186,7 +185,6 @@ async function salvarAlteracoesFuncionario() {
     }
     await adicionarFuncionario(); 
 }
-
 function actualizarDashboard() {
     const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
     let totalBruto = 0, totalDescontos = 0, totalLiquido = 0, custoTotalCorporativo = 0;
@@ -241,6 +239,7 @@ function renderizarGraficosNativos(liquido, descontos) {
         });
     }
 }
+
 function renderizarTabela() {
     const corpo = document.getElementById('tabela_corpo');
     if (!corpo) return;
@@ -268,25 +267,6 @@ function renderizarTabela() {
         document.getElementById(`lnk_${f.id}`)?.addEventListener('click', () => carregarFuncionarioParaEdicao(f));
     });
 }
-
-function imprimirBalanco() {
-    const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
-    let totalBruto = 0; funcionarios.forEach(f => { totalBruto += (f.salario + (f.total_he_ganho || 0)); });
-    const area = document.getElementById('print-area');
-    if (area) {
-        area.innerHTML = "<div style='padding:40px; font-family:sans-serif; text-align:center;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem; font-family: Arial, sans-serif; margin-bottom:15px;'>📊TERADMAS📈</div><h2>TERCEIRO ADM ASSOCIADOS - BALANÇO DE CAIXA</h2><hr><br><p style='text-align:left;'><strong>Receita Operacional Bruta:</strong> " + formatarMoeda(receita) + "</p><p style='text-align:left;'><strong>Custo de Salários/Reflexos:</strong> " + formatarMoeda(totalBruto) + "</p><br><h3 style='text-align:left;'>Saldo Final de Caixa: " + formatarMoeda(receita - totalBruto) + "</h3></div>";
-    }
-    document.body.classList.add('imprimindo-balanco'); window.print();
-    setTimeout(() => { document.body.classList.remove('imprimindo-balanco'); }, 1000);
-}
-
-function dispararRescisaoImediata(id, tipo) {
-    const f = funcionarios.find(emp => emp.id === id);
-    if (!f) return;
-    const msg = tipo === 'demissao_sem_justa' ? 'Calcular DISPENSA SEM JUSTA CAUSA de ' : 'Calcular PEDIDO DE DEMISSÃO de ';
-    if (confirm(msg + f.nome + "?")) { emitirRescisaoExecutiva(f, tipo); }
-}
-
 function abrirContracheque(id) {
     const f = funcionarios.find(emp => emp.id === id);
     if (!f) return;
@@ -294,7 +274,7 @@ function abrirContracheque(id) {
     const saude = f.plano_saude || 0; const odonto = f.plano_odontologico || 0; const sind = f.sindicato || 0; const farmacia = f.vale_farmacia || 0;
     const vrDesconto = f.vale_refeicao || 0; const vmDesconto = f.vale_mercado || 0;
     
-    // Força a leitura do adiantamento buscando as duas chaves possíveis para evitar conflito com o histórico do banco
+    // Força a leitura do adiantamento quinzenal em duas chaves operacionais
     const adiantVal = parseFloat(f.adiantamento_valor || f.adiantamento || 0);
     
     const totalDeducoesAtuais = (f.total_descontos || 0);
@@ -353,7 +333,7 @@ function abrirContracheque(id) {
     
     html += "<tr class='row-total'><td>TOTAL PROVENTOS:</td><td style='text-align:center;'>-</td><td class='text-right'>" + formatarMoeda(proventos) + "</td></tr></table>";
     
-    // Removidas as linhas duplicadas da tabela de descontos para exibição correta
+    // CORREÇÃO CIRÚRGICA DA IMAGEM: Removido o bloco repetido de vales para limpar as retenções
     html += "<h4 class='section-title descontos-title'>DESCONTOS (RETENÇÕES)</h4><table class='table-holerite'>";
     if (f.inss > 0) html += "<tr><td>(-) INSS Progressivo</td><td class='text-right'>" + formatarMoeda(f.inss) + "</td></tr>";
     if (f.irrf > 0) html += "<tr><td>(-) Imposto de Renda (IRRF)</td><td class='text-right'>" + formatarMoeda(f.irrf) + "</td></tr>";
@@ -374,6 +354,24 @@ function abrirContracheque(id) {
     html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
     janela.document.write(html); janela.document.close();
 }
+function imprimirBalanco() {
+    const receita = parseFloat(document.getElementById('receita_empresa')?.value) || 0;
+    let totalBruto = 0; funcionarios.forEach(f => { totalBruto += (f.salario + (f.total_he_ganho || 0)); });
+    const area = document.getElementById('print-area');
+    if (area) {
+        area.innerHTML = "<div style='padding:40px; font-family:sans-serif; text-align:center;'><div style='padding: 0 10px; height: 45px; background: #1e3a8a; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 1.1rem; font-family: Arial, sans-serif; margin-bottom:15px;'>📊TERADMAS📈</div><h2>TERCEIRO ADM ASSOCIADOS - BALANÇO DE CAIXA</h2><hr><br><p style='text-align:left;'><strong>Receita Operacional Bruta:</strong> " + formatarMoeda(receita) + "</p><p style='text-align:left;'><strong>Custo de Salários/Reflexos:</strong> " + formatarMoeda(totalBruto) + "</p><br><h3 style='text-align:left;'>Saldo Final de Caixa: " + formatarMoeda(receita - totalBruto) + "</h3></div>";
+    }
+    document.body.classList.add('imprimindo-balanco'); window.print();
+    setTimeout(() => { document.body.classList.remove('imprimindo-balanco'); }, 1000);
+}
+
+function dispararRescisaoImediata(id, tipo) {
+    const f = funcionarios.find(emp => emp.id === id);
+    if (!f) return;
+    const msg = tipo === 'demissao_sem_justa' ? 'Calcular DISPENSA SEM JUSTA CAUSA de ' : 'Calcular PEDIDO DE DEMISSÃO de ';
+    if (confirm(msg + f.nome + "?")) { emitirRescisaoExecutiva(f, tipo); }
+}
+
 function abrirFerias(id) {
     const f = funcionarios.find(emp => emp.id === id);
     if (!f) return;
@@ -392,7 +390,6 @@ function abrirFerias(id) {
     html += "<div class='assinatura-container'><div class='linha-assinatura'></div><p>Assinatura do Colaborador</p></div></div></body></html>";
     janela.document.write(html); janela.document.close();
 }
-
 function calcularDecimoTerceiroIndividual(id) {
     fetch(`/api/decimo_individual/${id}`)
         .then(res => res.json())
@@ -409,6 +406,7 @@ function calcularDecimoTerceiroIndividual(id) {
             janela.document.write(html); janela.document.close();
         }).catch(err => console.error(err));
 }
+
 async function emitirRescisaoExecutiva(f, tipo) {
     let liq = f.salario * 1.4; let proventos = f.salario * 1.5; let descontos = f.salario * 0.1;
     try {
@@ -437,9 +435,8 @@ function abrirDecimoTerceiroGeral() {
     html13 += "<div class='liquido-box'><span>TOTAL LÍQUIDO A PAGAR GLOBAL:</span><span class='liquido-value'>" + formatarMoeda(totalProventos - totalDescontos) + "</span></div></div></body></html>";
     janela.document.write(html13); janela.document.close();
 }
-
 async function deletarFuncionario(id) {
-    if (!confirm("Tem certeza que deseja remover este registro do systema?")) return;
+    if (!confirm("Tem certeza que deseja remover este registro do sistema?")) return;
     try { await fetch(`/api/funcionarios/${id}`, { method: 'DELETE' }); } catch(e) {}
     await carregarDadosBanco();
 }
@@ -470,7 +467,6 @@ function alternarTema() {
         if (botao) botao.innerHTML = '🌙 Modo Escuro'; localStorage.setItem('tema', 'claro');
     }
 }
-
 let leitorAtivo = false;
 function alternarLeitorAudio() {
     leitorAtivo = !leitorAtivo; const btn = document.getElementById('btn-leitor-audio');
@@ -490,3 +486,47 @@ document.addEventListener('mouseover', (evento) => {
         fala.lang = 'pt-BR'; fala.rate = 1.25; window.speechSynthesis.speak(fala);
     }
 });
+
+function gerarCalendarioPontoAutomatizado() {
+    const campoMes = document.getElementById("ponto_mes_referencia");
+    if (!campoMes || !campoMes.value) return;
+    const [anoStr, mesStr] = campoMes.value.split("-");
+    const ano = parseInt(anoStr, 10); const mes = parseInt(mesStr, 10);
+    const totalDias = new Date(ano, mes, 0).getDate();
+    const corpoTabela = document.getElementById("corpo_ponto_mensal");
+    if (!corpoTabela) return; corpoTabela.innerHTML = "";
+    const nomesDias = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    for (let dia = 1; dia <= totalDias; dia++) {
+        const dataItem = new Date(ano, mes - 1, dia); const indiceSemana = dataItem.getDay(); const nomeDiaSemana = nomesDias[indiceSemana];
+        let horarioSaidaPadrao = "17:00"; let corFundoLinha = "#ffffff";
+        if (indiceSemana === 0 || indiceSemana === 6) { corFundoLinha = "#f8fafc"; horarioSaidaPadrao = "08:00"; }
+        const elementoTr = document.createElement("tr"); elementoTr.style.background = corFundoLinha; elementoTr.style.borderBottom = "1px solid #e2e8f0"; elementoTr.setAttribute("data-dia-semana-num", indiceSemana);
+        elementoTr.innerHTML = `<td style="padding: 10px; font-weight: bold; color: #1e3a8a;">${dia.toString().padStart(2, '0')}</td><td style="padding: 10px; color: #334155;">${nomeDiaSemana}</td><td style="padding: 10px;"><input type="time" class="ponto-entrada-valor" value="08:00" style="padding: 4px; width: 100px; border: 1px solid #cbd5e1; border-radius: 4px;"></td><td style="padding: 10px;"><input type="time" class="ponto-saida-valor" value="${horarioSaidaPadrao}" style="padding: 4px; width: 100px; border: 1px solid #cbd5e1; border-radius: 4px;"></td>`;
+        corpoTabela.appendChild(elementoTr);
+    }
+}
+
+function ejecutarCalculoPontoMensal() {
+    const linhasTabela = document.querySelectorAll("#corpo_ponto_mensal tr");
+    if (linhasTabela.length === 0) { alert("Gere ou selecione um mês válido primeiro."); return; }
+    let acumuladoExtras50 = 0; let acumuladoExtras100 = 0;
+    linhasTabela.forEach(linha => {
+        const diaSemanaNum = parseInt(linha.getAttribute("data-dia-semana-num"), 10);
+        const stringEntrada = line.querySelector(".ponto-entrada-valor").value; const stringSaida = linha.querySelector(".ponto-saida-valor").value;
+        if (!stringEntrada || !stringSaida) return;
+        const [horaEnt, minEnt] = stringEntrada.split(":").map(Number); const [horaSai, minSai] = stringSaida.split(":").map(Number);
+        let minutosEntradaTotal = horaEnt * 60 + minEnt; let minutosSaidaTotal = horaSai * 60 + minSai;
+        if (minutosSaidaTotal < minutosEntradaTotal) { minutosSaidaTotal += 24 * 60; }
+        let minutosTrabalhadosNoDia = minutosSaidaTotal - minutosEntradaTotal;
+        if (minutosTrabalhadosNoDia > 360) { minutosTrabalhadosNoDia -= 60; }
+        const horasTrabalhadasNoDia = minutosTrabalhadosNoDia / 60; const limiteJornadaDiaria = 8;
+        if (diaSemanaNum === 0 || diaSemanaNum === 6) { if (stringSaida !== "08:00") { acumuladoExtras100 += horasTrabalhadasNoDia; } } 
+        else { if (horasTrabalhadasNoDia > limiteJornadaDiaria) { const saldoExtraDoDia = horasTrabalhadasNoDia - limiteJornadaDiaria; if (saldoExtraDoDia <= 2) { acumuladoExtras50 += saldoExtraDoDia; } else { acumuladoExtras50 += 2; acumuladoExtras100 += (saldoExtraDoDia - 2); } } }
+    });
+    const inputHeSabado = document.getElementById("he_sabado"); const inputHeDomingo = document.getElementById("he_domingo");
+    if (inputHeSabado) inputHeSabado.value = acumuladoExtras50.toFixed(2); if (inputHeDomingo) inputHeDomingo.value = acumuladoExtras100.toFixed(2);
+    if (typeof actualizarDashboard === "function") { actualizarDashboard(); }
+    alert(`Ponto Computado com Sucesso!\n\nHoras Extras 50%: ${acumuladoExtras50.toFixed(2)}h\nHoras Extras 100%: ${acumuladoExtras100.toFixed(2)}h\n\nOs painéis gráficos e inputs foram atualizados.`);
+}
+
+document.addEventListener("DOMContentLoaded", () => { gerarCalendarioPontoAutomatizado(); });
