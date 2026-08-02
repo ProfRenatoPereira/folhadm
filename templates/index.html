@@ -45,22 +45,28 @@
 </head>
 <body>
 
-<!-- Barra Superior de Ferramentas de Acessibilidade Geral -->
-<div id="barra-acessibilidade" style="background: #0f172a; padding: 0.5rem 1rem; display: flex; justify-content: flex-end; gap: 0.8rem; align-items: center; color: #fff; font-size: 0.85rem; font-family: sans-serif; border-bottom: 1px solid #334155;">
-    <div style="display: flex; align-items: center; gap: 1.2rem;">
-            <img src="{{ url_for('static', filename='Logo.svg') }}" alt=" Logo ®ψΣ" style=" height: 65px; width: auto; object-fit: contain;">
-            <div>
-    <span>♿ Acessibilidade:</span>
-    <button type="button" onclick="mudarFonte(1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A+</button>
-    <button type="button" onclick="mudarFonte(-1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A-</button>
-    <button type="button" onclick="alternarAltoContraste()" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">⚫ Alto Contraste</button>
-    <button type="button" id="btn_tema" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🌙 Modo Escuro</button>
-    <button type="button" id="btn-leitor-audio" onclick="alternarLeitorAudio()" style="background: #0284c7; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🔊 Ativar Leitor</button>
+<!-- BARRA DE ACESSIBILIDADE CORRIGIDA COM LOGO DISCRETA À ESQUERDA -->
+<div id="barra-acessibilidade" style="background: #0f172a; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; color: #fff; font-size: 0.85rem; font-family: sans-serif; border-bottom: 1px solid #334155;">
+    <!-- LOGO DISCRETA FIXADA À ESQUERDA -->
+    <div style="display: flex; align-items: center;">
+        <img src="{{ url_for('static', filename='Logo.svg') }}" alt="Logo ®ψΣ" style="height: 24px; width: auto; object-fit: contain; opacity: 0.9;">
+    </div>
+    
+    <!-- CONTROLES ALINHADOS PERFEITAMENTE À DIREITA -->
+    <div style="display: flex; gap: 0.8rem; align-items: center;">
+        <span>♿ Acessibilidade:</span>
+        <button type="button" onclick="mudarFonte(1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A+</button>
+        <button type="button" onclick="mudarFonte(-1)" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">A-</button>
+        <button type="button" onclick="alternarAltoContraste()" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">⚫ Alto Contraste</button>
+        <button type="button" id="btn_tema" style="background: #334155; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🌙 Modo Escuro</button>
+        <button type="button" id="btn-leitor-audio" onclick="alternarLeitorAudio()" style="background: #0284c7; color: white; border: none; padding: 4px 10px; cursor: pointer; border-radius: 4px; font-weight: bold;">🔊 Ativar Leitor</button>
+    </div>
 </div>
+
 <div class="container">
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 3px solid var(--primary); padding-bottom: 0.75rem;">
         <div style="display: flex; align-items: center; gap: 1.2rem;">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt=" Logo ®ψΣ" style=" height: 65px; width: auto; object-fit: contain;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt=" Logo TERADMAS" style=" height: 65px; width: auto; object-fit: contain;">
             <div>
                 <h1 style="margin: 0; color: var(--primary); font-size: 1.8rem;">TERCEIRO ADM ASSOCIADOS</h1>
                 <p style="margin: 3px 0 0 0; font-size: 0.9rem; color: #475569;">Gerenciador de Pessoal | Abordagem Pedagógico-Didática de Custos</p>
@@ -270,13 +276,8 @@
             </div>
         </div>
     </div>
-</div>
 
-<div id="print-area" style="display: none;"></div>
-
-<script src="{{ url_for('static', filename='script.js') }}"></script>
-        <!-- SEÇÃO ADICIONADA: RODAPÉ INSTITUCIONAL E ACESSIBILIDADE -->
-        <!-- SEÇÃO ATUALIZADA: RODAPÉ INSTITUCIONAL, HOMENAGEM E EVOLUÇÃO TECNOLÓGICA -->
+    <!-- SEÇÃO ATUALIZADA: RODAPÉ INSTITUCIONAL, HOMENAGEM E EVOLUÇÃO TECNOLÓGICA -->
     <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 2px solid var(--primary); font-family: sans-serif; font-size: 0.8rem; color: #475569;" class="rodape-legal">
         <p style="text-align: justify; line-height: 1.4; margin-bottom: 1rem;">
             <strong>CRÉDITOS & HOMENAGEM:</strong> Autoras e autores de códigos, imagens, sons e demais conhecimentos utilizados e multiplicados neste projeto aberto. Uma construção que reflete a contínua interação entre o <em>Homo sapiens</em> tecnológico e a Inteligência Artificial. Sobretudo, toda gratidão por gentis críticas e generosa motivação creditadas por estimadas e valorosos estudantes.
@@ -291,7 +292,10 @@
             Ed. 00-10/2024. Rev. 01-05/2026.
         </p>
     </footer>
+</div>
 
+<div id="print-area" style="display: none;"></div>
 
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
