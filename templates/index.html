@@ -179,6 +179,7 @@
             </div>
         </div>
     </div>
+
     <div class="dashboard">
         <div class="metric"><p>Funcionários Ativos</p><h2 id="dash_total_func">0 / 10</h2></div>
         <div class="metric"><p>Custo Bruto Total</p><h2 id="dash_custo_bruto">R$ 0,00</h2></div>
@@ -186,11 +187,13 @@
         <div class="metric"><p>Líquido Bancário</p><h2 id="dash_folha_liquida">R$ 0,00</h2></div>
         <div class="metric" id="card_balanco"><p>Margem Disponível</p><h2 id="dash_saldo_empresa">R$ 0,00</h2></div>
     </div>
+
     <div class="bi-container">
         <div class="chart-box"><h4>📊 Divisão Macroeconômica (Pizza)</h4><div class="pizza-wrapper"><div id="nativePizza" class="pizza-native"></div></div></div>
         <div class="chart-box"><h4>📊 Análise de Pareto por Cargo</h4><div id="nativePareto" class="bar-container"></div></div>
         <div class="chart-box"><h4>📊 Elasticidade de Salário Bruto (Aumentos)</h4><div id="nativeLinear" class="linear-wrapper"></div></div>
     </div>
+
     <div class="section-title"><h2>Quadro Corporativo Corrente</h2><button class="btn-print" style="background:#0284c7" id="btn_print_list">🖨️ Imprimir Listagem</button></div>
     <div class="table-container">
         <table>
@@ -204,6 +207,41 @@
                 </tr>
             </thead>
             <tbody id="tabela_corpo"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SEÇÃO ADICIONADA: ESPELHO DE PONTO ELETRÔNICO MENSAL -->
+<div class="chart-box" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <h4 style="color: #1e3a8a; font-size: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🗓️ Espelho de Ponto Eletrônico (Lançamento Didático)</h4>
+    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-end; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Mês/Ano do Ponto</label>
+            <input type="month" id="ponto_mes_referencia" class="input-control" value="2026-07" onchange="gerarCalendarioPontoAutomatizado()" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Turno de Trabalho</label>
+            <select id="ponto_turno" class="input-control" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <option value="diurno" selected>Diurno (Comercial Padrão)</option>
+                <option value="noturno">Noturno (Adicional 20%)</option>
+            </select>
+        </div>
+        <button type="button" class="btn-print" onclick="executarCalculoPontoMensal()" style="background: #16a34a; color: white; border: none; padding: 0.6rem 1.2rem; font-weight: bold; border-radius: 4px; cursor: pointer; height: 38px;">⚙️ Processar e Alimentar Folha</button>
+    </div>
+    
+    <div style="max-height: 350px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+                <tr style="background: #1e3a8a; color: white; text-align: left; position: sticky; top: 0; z-index: 10;">
+                    <th style="padding: 10px; width: 10%;">Dia</th>
+                    <th style="padding: 10px; width: 25%;">Dia da Semana</th>
+                    <th style="padding: 10px; width: 32%;">Horário de Entrada</th>
+                    <th style="padding: 10px; width: 33%;">Horário de Saída</th>
+                </tr>
+            </thead>
+            <tbody id="corpo_ponto_mensal">
+                <!-- Linhas preenchidas de forma dinâmica via JavaScript -->
+            </tbody>
         </table>
     </div>
 </div>
