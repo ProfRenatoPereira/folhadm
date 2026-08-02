@@ -193,7 +193,6 @@
         <div class="chart-box"><h4>📊 Análise de Pareto por Cargo</h4><div id="nativePareto" class="bar-container"></div></div>
         <div class="chart-box"><h4>📊 Elasticidade de Salário Bruto (Aumentos)</h4><div id="nativeLinear" class="linear-wrapper"></div></div>
     </div>
-
     <div class="section-title"><h2>Quadro Corporativo Corrente</h2><button class="btn-print" style="background:#0284c7" id="btn_print_list">🖨️ Imprimir Listagem</button></div>
     <div class="table-container">
         <table>
@@ -209,40 +208,64 @@
             <tbody id="tabela_corpo"></tbody>
         </table>
     </div>
-</div>
+    <!-- SEÇÃO ATUALIZADA: ESPELHO DE PONTO E HISTÓRICO CORPORATIVO -->
+    <div class="chart-box" style="margin-top: 2rem; margin-bottom: 2rem;">
+        <h4 style="color: #1e3a8a; font-size: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;">🗓️ Central de Auditoria de Ponto e Histórico Laboral</h4>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-end; background: #f8fafc; padding: 1.25rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <div class="form-group" style="margin-bottom: 0; min-width: 240px; flex-grow: 1;">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">1. Selecione o Colaborador</label>
+                <select id="ponto_selecao_funcionario" class="input-control" onchange="carregarHistoricoDoColaborador()" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
+                    <option value="">-- Escolha um Profissional --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; min-width: 160px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Mês/Ano de Apuração</label>
+                <input type="month" id="ponto_mes_referencia" class="input-control" value="2026-07" onchange="gerarCalendarioPontoAutomatizado()" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0; min-width: 160px;">
+                <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Turno Vinculado</label>
+                <select id="ponto_turno" class="input-control" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; background: white;">
+                    <option value="diurno" selected>Diurno (Comercial)</option>
+                    <option value="noturno">Noturno (Adicional)</option>
+                </select>
+            </div>
+            <div style="min-width: 200px;">
+                <button type="button" class="btn-print" onclick="executarCalculoPontoMensal()" style="background: #16a34a; color: white; border: none; padding: 0.6rem 1.2rem; font-weight: bold; border-radius: 4px; cursor: pointer; height: 38px; width: 100%;">⚙️ Processar Cartão de Ponto</button>
+            </div>
+        </div>
 
-<!-- SEÇÃO ADICIONADA: ESPELHO DE PONTO ELETRÔNICO MENSAL -->
-<div class="chart-box" style="margin-top: 2rem; margin-bottom: 2rem;">
-    <h4 style="color: #1e3a8a; font-size: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">🗓️ Espelho de Ponto Eletrônico (Lançamento Didático)</h4>
-    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; align-items: flex-end; background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid #e2e8f0;">
-        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Mês/Ano do Ponto</label>
-            <input type="month" id="ponto_mes_referencia" class="input-control" value="2026-07" onchange="gerarCalendarioPontoAutomatizado()" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+        <!-- Divisão em duas colunas: Lançamento de Ponto à Esquerda e Histórico de Estudos à Direita -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+            <div>
+                <h5 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 0.95rem;">📋 Lançamento de Horários Realizados</h5>
+                <div style="max-height: 320px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: #1e3a8a; color: white; text-align: left; position: sticky; top: 0; z-index: 10;">
+                                <th style="padding: 10px; width: 15%;">Dia</th>
+                                <th style="padding: 10px; width: 35%;">Dia da Semana</th>
+                                <th style="padding: 10px; width: 25%;">Entrada</th>
+                                <th style="padding: 10px; width: 25%;">Saída</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpo_ponto_mensal"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div>
+                <h5 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 0.95rem;">📚 Histórico para Estudos e Fins Rescisórios</h5>
+                <div style="max-height: 320px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; padding: 15px; box-sizing: border-box;">
+                    <div id="ponto_historico_vazio" style="color: #64748b; font-style: italic; text-align: center; padding: 40px 10px;">
+                        Selecione um colaborador acima para auditar o histórico de holerites e médias acumuladas para rescisão.
+                    </div>
+                    <div id="ponto_historico_conteudo" style="display: none; font-size: 0.85rem; color: #334155;">
+                        <!-- Preenchido dinamicamente via JS -->
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0; min-width: 180px;">
-            <label style="display: block; font-weight: bold; margin-bottom: 0.3rem; color: #334155;">Turno de Trabalho</label>
-            <select id="ponto_turno" class="input-control" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;">
-                <option value="diurno" selected>Diurno (Comercial Padrão)</option>
-                <option value="noturno">Noturno (Adicional 20%)</option>
-            </select>
-        </div>
-        <button type="button" class="btn-print" onclick="executarCalculoPontoMensal()" style="background: #16a34a; color: white; border: none; padding: 0.6rem 1.2rem; font-weight: bold; border-radius: 4px; cursor: pointer; height: 38px;">⚙️ Processar e Alimentar Folha</button>
-    </div>
-    
-    <div style="max-height: 350px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-            <thead>
-                <tr style="background: #1e3a8a; color: white; text-align: left; position: sticky; top: 0; z-index: 10;">
-                    <th style="padding: 10px; width: 10%;">Dia</th>
-                    <th style="padding: 10px; width: 25%;">Dia da Semana</th>
-                    <th style="padding: 10px; width: 32%;">Horário de Entrada</th>
-                    <th style="padding: 10px; width: 33%;">Horário de Saída</th>
-                </tr>
-            </thead>
-            <tbody id="corpo_ponto_mensal">
-                <!-- Linhas preenchidas de forma dinâmica via JavaScript -->
-            </tbody>
-        </table>
     </div>
 </div>
 
